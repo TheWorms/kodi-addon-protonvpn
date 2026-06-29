@@ -1,3 +1,10 @@
+v0.1.0
+- Migration auto des configs importees par les anciennes versions
+  (rangees dans addon_data) vers le nouveau magasin userdata/ProtonVPN :
+  les serveurs importes avant reapparaissent dans la liste.
+- Limite portee a 10 configurations par backend (10 WireGuard + 10 OpenVPN).
+- Bouton 'Ouvrir le menu ProtonVPN' fiabilise (RunAddon).
+
 v0.0.9
 - Correctif majeur connexion auto : si l'option est DESACTIVEE, l'addon
   demarre desormais DECONNECTE (un tunnel WireGuard residuel d'une session

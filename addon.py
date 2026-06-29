@@ -22,7 +22,6 @@ HANDLE = int(sys.argv[1])
 BASE = sys.argv[0]
 ICON = os.path.join(common.ADDON_PATH, "resources", "icon.png")
 
-MAX_CONFIGS = 10
 
 
 def build_url(**kwargs):
@@ -199,11 +198,6 @@ def do_status():
 
 
 def do_import(kind=None):
-    if len(configs.scan()) >= MAX_CONFIGS:
-        common.ok(common.L(32163) % MAX_CONFIGS)
-        if HANDLE >= 0:
-            view_root()
-        return
     mask = {"wg": ".conf", "ovpn": ".ovpn"}.get(kind, ".ovpn|.conf")
     path = xbmcgui.Dialog().browse(1, common.L(32142), "files", mask, False, False)
     if not path or os.path.isdir(path):
@@ -213,6 +207,11 @@ def do_import(kind=None):
     cfg = configs.import_file(path)
     if not cfg:
         common.ok(common.L(32144))
+        if HANDLE >= 0:
+            view_root()
+        return
+    if cfg.get("_full"):
+        common.ok(common.L(32182) % (configs.MAX_PER_BACKEND, _backend_name(cfg["backend"])))
         if HANDLE >= 0:
             view_root()
         return
