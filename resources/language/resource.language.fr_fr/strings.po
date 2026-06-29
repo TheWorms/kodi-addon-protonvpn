@@ -26,25 +26,29 @@ msgstr "Avance"
 
 # Configuration
 msgctxt "#32101"
-msgid "ProtonVPN config folder"
-msgstr "Dossier des configurations ProtonVPN"
+msgid "ProtonVPN config folder (optional)"
+msgstr "Dossier de configurations (facultatif)"
 
 msgctxt "#32102"
-msgid "OpenVPN username"
-msgstr "Identifiant OpenVPN"
+msgid "ProtonVPN username (OpenVPN/IKEv2)"
+msgstr "Identifiant ProtonVPN (OpenVPN/IKEv2)"
 
 msgctxt "#32103"
-msgid "OpenVPN password"
-msgstr "Mot de passe OpenVPN"
+msgid "ProtonVPN password (OpenVPN/IKEv2)"
+msgstr "Mot de passe ProtonVPN (OpenVPN/IKEv2)"
 
 msgctxt "#32104"
 msgid "Use the OpenVPN/IKEv2 username from your ProtonVPN account dashboard - not your login email."
-msgstr "Utilisez l'identifiant OpenVPN/IKEv2 de votre compte ProtonVPN - pas votre e-mail de connexion."
+msgstr "Identifiant OpenVPN/IKEv2 du compte ProtonVPN (OpenVPN uniquement) - pas votre e-mail."
+
+msgctxt "#32105"
+msgid "Folder containing the ProtonVPN .ovpn files you downloaded."
+msgstr "Dossier contenant les fichiers .ovpn ProtonVPN telecharges."
 
 # Connexion
 msgctxt "#32111"
-msgid "Preferred protocol"
-msgstr "Protocole prefere"
+msgid "Preferred protocol (OpenVPN)"
+msgstr "Protocole prefere (OpenVPN)"
 
 msgctxt "#32112"
 msgid "Both"
@@ -59,8 +63,8 @@ msgid "TCP"
 msgstr "TCP"
 
 msgctxt "#32115"
-msgid "NetShield (DNS filtering)"
-msgstr "NetShield (filtrage DNS)"
+msgid "NetShield (DNS filtering, OpenVPN)"
+msgstr "NetShield (filtrage DNS, OpenVPN)"
 
 msgctxt "#32116"
 msgid "Off"
@@ -75,8 +79,8 @@ msgid "Block malware, ads and trackers"
 msgstr "Bloquer malwares, pubs et traqueurs"
 
 msgctxt "#32119"
-msgid "Moderate NAT"
-msgstr "NAT modere"
+msgid "Moderate NAT (OpenVPN)"
+msgstr "NAT modere (OpenVPN)"
 
 msgctxt "#32121"
 msgid "Connection timeout (seconds)"
@@ -184,3 +188,43 @@ msgstr "Connexion a %s..."
 msgctxt "#32078"
 msgid "Connection dropped - reconnecting..."
 msgstr "Connexion perdue - reconnexion..."
+
+msgctxt "#32130"
+msgid "Test connection"
+msgstr "Tester la connexion"
+
+msgctxt "#32131"
+msgid "Test successful - connected to %s"
+msgstr "Test reussi - connecte a %s"
+
+msgctxt "#32132"
+msgid "External IP: %s"
+msgstr "Adresse IP externe : %s"
+
+msgctxt "#32140"
+msgid "WireGuard tools (wg-quick) not found - install wireguard-tools"
+msgstr "Outils WireGuard (wg-quick) introuvables - installez wireguard-tools"
+
+msgctxt "#32141"
+msgid "WireGuard failed to start: %s"
+msgstr "Echec WireGuard : %s"
+
+msgctxt "#32142"
+msgid "Import a configuration (.ovpn or .conf)"
+msgstr "Importer une configuration (.ovpn ou .conf)"
+
+msgctxt "#32143"
+msgid "Imported: %s"
+msgstr "Importe : %s"
+
+msgctxt "#32144"
+msgid "Unsupported or invalid configuration file"
+msgstr "Fichier de configuration non pris en charge ou invalide"
+
+msgctxt "#32145"
+msgid "Import a configuration"
+msgstr "Importer une configuration"
+
+msgctxt "#32147"
+msgid "wg-quick executable (leave blank to auto-detect)"
+msgstr "Executable wg-quick (vide = detection auto)"

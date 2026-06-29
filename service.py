@@ -15,6 +15,12 @@ from lib import configs
 
 class ProtonService(xbmc.Monitor):
 
+    # Exponential-ish backoff between reconnection attempts, and a ceiling on
+    # consecutive failures before we stop trying and surface an error. This
+    # mirrors how the official daemon avoids hammering a dead endpoint.
+    _BACKOFF = [5, 15, 30, 60]
+    _MAX_FAILS = 5
+
     def __init__(self):
         super().__init__()
         self.expected = False  # do we want a connection to be up?
@@ -51,23 +57,49 @@ class ProtonService(xbmc.Monitor):
         self.auto_connect()
         if vpn.is_running():
             self.expected = True
+            common.set_phase(common.PHASE_CONNECTED)
 
+        fails = 0
         while not self.abortRequested():
             if self.waitForAbort(self._check_interval()):
                 break
             running = vpn.is_running()
+
             if self.expected and not running:
-                if common.get_bool("reconnect_on_drop", True):
-                    common.log("Connection dropped, attempting reconnect")
-                    common.notify(common.L(32078))  # Reconnecting...
-                    if not vpn.reconnect_last(quiet=True):
-                        common.notify(common.L(32074))
-                else:
+                if not common.get_bool("reconnect_on_drop", True):
                     self.expected = False
                     common.set_state(False)
-            elif running and not common.get_state()["connected"]:
-                # Connection came up out of band (e.g. via the plugin).
-                common.set_state(True, server=common.get_state().get("server", ""))
+                    common.set_phase(common.PHASE_DISCONNECTED)
+                    continue
+
+                if fails == 0:
+                    common.notify(common.L(32078))  # "dropped - reconnecting"
+                common.set_phase(common.PHASE_RECONNECTING)
+                common.log("Connection dropped, reconnect attempt %d" % (fails + 1))
+
+                if vpn.reconnect_last(quiet=True):
+                    fails = 0
+                else:
+                    fails += 1
+                    if fails >= self._MAX_FAILS:
+                        common.log("Giving up after %d reconnect failures" % fails)
+                        self.expected = False
+                        common.set_state(False)
+                        common.set_phase(common.PHASE_ERROR)
+                        common.notify(common.L(32074))
+                        fails = 0
+                    else:
+                        # Back off (abort-aware) before the next attempt.
+                        delay = self._BACKOFF[min(fails - 1, len(self._BACKOFF) - 1)]
+                        if self.waitForAbort(delay):
+                            break
+            elif running:
+                # Healthy: keep shared state consistent (e.g. if the tunnel was
+                # brought up out of band by the plugin).
+                fails = 0
+                if not common.get_state()["connected"]:
+                    common.set_state(True, server=common.get_state().get("server", ""))
+                common.set_phase(common.PHASE_CONNECTED)
 
         # Kodi is shutting down.
         if common.get_bool("disconnect_on_exit", False) and vpn.is_running():
