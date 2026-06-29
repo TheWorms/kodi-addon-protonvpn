@@ -344,3 +344,7 @@ msgstr ""
 msgctxt "#32180"
 msgid "%s is disabled - change the default protocol (Settings > Home)"
 msgstr ""
+
+msgctxt "#32181"
+msgid "Open the ProtonVPN menu"
+msgstr ""
