@@ -42,19 +42,19 @@ class ProtonService(xbmc.Monitor):
     def auto_connect(self):
         if not common.get_bool("auto_connect", False):
             return
-        folder = configs.config_folder()
-        if not folder or not os.path.isdir(folder):
-            common.debug("auto-connect skipped: config folder not set")
-            return
         last = common.get_setting("last_config", "")
         if last and os.path.exists(last):
-            common.log("Auto-connecting to last server")
-            self.expected = True
-            vpn.connect(last, quiet=True)
-            return
-        # No last server: pick the first config of the preferred country.
+            cfg = configs.parse_config(last)
+            if cfg:
+                common.log("Auto-connecting to last server %s" % cfg["label"])
+                self.expected = True
+                vpn.connect(cfg, quiet=True)
+                return
+        # No usable last server: pick the first config of the default protocol,
+        # optionally filtered by the preferred country.
+        backend = common.get_setting("default_protocol", "wireguard")
+        all_cfg = [c for c in configs.scan() if c["backend"] == backend] or configs.scan()
         pref_country = common.get_setting("default_country", "").upper()
-        all_cfg = configs.scan()
         if pref_country:
             cand = [c for c in all_cfg if c["country"] == pref_country]
             all_cfg = cand or all_cfg
@@ -64,8 +64,15 @@ class ProtonService(xbmc.Monitor):
             vpn.connect(all_cfg[0], quiet=True)
 
     def loop(self):
+        if common.get_bool("auto_connect", False):
+            self.auto_connect()
+        elif vpn.is_running():
+            # Auto-connect is off: don't keep a tunnel left up by a previous
+            # session (WireGuard interfaces survive a Kodi restart).
+            common.log("Auto-connect off: tearing down leftover tunnel")
+            vpn.disconnect(quiet=True)
+
         common.set_state(vpn.is_running(), server=common.get_state().get("server", ""))
-        self.auto_connect()
         if vpn.is_running():
             self.expected = True
             common.set_phase(common.PHASE_CONNECTED)

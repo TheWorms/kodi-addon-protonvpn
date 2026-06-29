@@ -1,3 +1,13 @@
+v0.0.9
+- Correctif majeur connexion auto : si l'option est DESACTIVEE, l'addon
+  demarre desormais DECONNECTE (un tunnel WireGuard residuel d'une session
+  precedente est coupe au demarrage). Avant, le tunnel persistant donnait
+  l'impression d'une connexion automatique.
+- Correctif auto_connect (quand active) : ne depend plus du dossier supprime
+  et se connecte au bon type de config (bug qui l'empechait de fonctionner).
+- Reglages > Accueil : bouton 'Ouvrir le menu ProtonVPN' pour lancer
+  l'interface (serveurs, stats...) directement depuis les reglages.
+
 v0.0.8
 - Liste Serveurs : toutes les configs sont affichees ; le backend non
   actif est GRISE (plus masque) et non connectable d'ici.

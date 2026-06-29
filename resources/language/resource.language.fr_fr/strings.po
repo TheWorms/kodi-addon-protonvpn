@@ -344,3 +344,7 @@ msgstr "Retour pour fermer"
 msgctxt "#32180"
 msgid "%s is disabled - change the default protocol (Settings > Home)"
 msgstr "%s desactive - change le protocole par defaut (Reglages > Accueil)"
+
+msgctxt "#32181"
+msgid "Open the ProtonVPN menu"
+msgstr "Ouvrir le menu ProtonVPN"
