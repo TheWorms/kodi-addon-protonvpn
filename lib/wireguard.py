@@ -133,18 +133,45 @@ def is_running():
 
 # --- connect / disconnect --------------------------------------------------
 
+def _sanitize_conf(text):
+    """Adapt a Proton WireGuard config for minimal kernels (CoreELEC):
+    - drop IPv6 from AllowedIPs/Address so wg-quick never touches ip6tables
+      (many embedded kernels lack the ip6tables 'raw' table);
+    - drop the DNS line when no resolvconf-like tool is available, otherwise
+      wg-quick aborts the whole bring-up.
+    """
+    keep_dns = _has_resolvconf()
+    out = []
+    for line in text.splitlines():
+        low = line.strip().lower()
+        if low.startswith("dns") and not keep_dns:
+            continue
+        if low.startswith("allowedips") or low.startswith("address"):
+            try:
+                key, val = line.split("=", 1)
+            except ValueError:
+                out.append(line)
+                continue
+            v4 = [p.strip() for p in val.split(",") if p.strip() and ":" not in p]
+            if low.startswith("allowedips") and not v4:
+                v4 = ["0.0.0.0/0"]
+            if v4:
+                out.append("%s= %s" % (key, ", ".join(v4)))
+            continue
+        out.append(line)
+    return "\n".join(out) + "\n"
+
+
 def _prepare_runconf(src, iface):
-    """Copy the config into the run dir under <iface>.conf so wg-quick derives
-    the right interface name. Strip the DNS line when no resolvconf-like tool is
-    present, otherwise wg-quick aborts the whole bring-up."""
+    """Copy the config into the run dir under <iface>.conf (so wg-quick derives
+    the right interface name) after sanitising it for the local kernel."""
     try:
         with open(src, "r", encoding="utf-8", errors="ignore") as fh:
             text = fh.read()
     except OSError as exc:
         common.error("Cannot read WG config %s: %s" % (src, exc))
         return ""
-    if not _has_resolvconf():
-        text = re.sub(r"^\s*DNS\s*=.*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    text = _sanitize_conf(text)
     dst = os.path.join(configs.run_dir(), iface + ".conf")
     try:
         with open(dst, "w", encoding="utf-8") as fh:

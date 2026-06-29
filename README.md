@@ -1,169 +1,130 @@
 # ProtonVPN
 
-Addon Kodi pour piloter **ProtonVPN** avec une interface graphique, en
-**OpenVPN** ou **WireGuard** au choix. Importez vos fichiers de configuration,
-parcourez les serveurs par pays, connectez/déconnectez, connexion automatique
-au démarrage et reconnexion en cas de coupure.
+Addon Kodi pour piloter **ProtonVPN** avec une interface simple, en **WireGuard**
+ou **OpenVPN** au choix. Importe tes configurations, choisis un serveur (test +
+connexion), vois l'état du VPN en direct, suis les stats et les journaux.
 
-Conçu pour **CoreELEC / LibreELEC** et les autres installations Linux de Kodi
-(testé sur Kodi 21 « Omega », ODROID-N2+).
+Conçu pour **CoreELEC / LibreELEC** et les autres Kodi sous Linux (testé Kodi 21
+« Omega », ODROID-N2+).
 
 > Addon indépendant, **non affilié à Proton AG**. « ProtonVPN » est une marque
-> de Proton AG, utilisée ici à des fins de description.
+> de Proton AG, utilisée à des fins de description.
 
 - **Dépôt** : `github.com/TheWorms/kodi-addon-protonvpn`
-- **Identifiant Kodi** : `service.protonvpn.manager` (nom du dossier, imposé par Kodi)
-- **Nom affiché** : ProtonVPN
-- **Licence** : GPL-2.0-or-later
+- **Identifiant Kodi** : `service.protonvpn.manager`
+- **Nom affiché** : ProtonVPN · **Licence** : GPL-2.0-or-later
 
 ---
 
-## Sommaire
+## L'écran d'accueil (addon lancé)
 
-1. [Téléchargement](#1-téléchargement)
-2. [Prérequis](#2-prérequis)
-3. [Récupérer ses configurations ProtonVPN](#3-récupérer-ses-configurations-protonvpn)
-4. [Installer l'addon](#4-installer-laddon)
-5. [Importer ses configurations](#5-importer-ses-configurations)
-6. [Configurer](#6-configurer)
-7. [Utiliser](#7-utiliser)
-8. [OpenVPN ou WireGuard ?](#8-openvpn-ou-wireguard-)
-9. [Comment ça marche](#9-comment-ça-marche)
-10. [Dépannage](#10-dépannage)
-11. [Limites connues](#11-limites-connues)
+```
+●/○  État VPN  (serveur · IP)
+Serveurs (WireGuard|OpenVPN, n)   ▸ serveurs du protocole actif
+Connexion rapide                  → meilleur serveur du protocole par défaut
+[Déconnecter]                     (si connecté)
+Tester la connexion               → si OK : pays + IP publique
+Importer une configuration
+Stats
+Journaux
+Réglages
+```
 
----
+Le **protocole par défaut** (Réglages → Accueil) décide du backend affiché : en
+WireGuard, les configs OpenVPN sont masquées, et inversement. Dans **Serveurs**,
+choisir un serveur = test puis connexion (point vert = actif). Menu contextuel
+sur un serveur → **Supprimer**.
 
-## 1. Téléchargement
+> ⚠️ Ce menu apparaît quand tu **lances** l'addon (Add-ons → Extensions
+> programmes → ProtonVPN → OK). Le menu contextuel → *Paramètres* ouvre la page
+> de réglages (Accueil / WireGuard / OpenVPN / Avancé), pas ce menu.
 
-Récupérer le zip installable depuis la page **Releases** :
+## Prérequis
 
-> https://github.com/TheWorms/kodi-addon-protonvpn/releases
-
-Télécharger l'asset **`kodi-addon-protonvpn-0.3.0.zip`** (et non le « Source
-code (zip) » généré par GitHub, qui n'est pas installable tel quel).
-
-## 2. Prérequis
-
-Selon le backend que vous comptez utiliser :
-
-**OpenVPN** — le binaire `openvpn` présent sur le système.
-- CoreELEC/LibreELEC : addon *OpenVPN for LibreELEC* (fournit `/usr/sbin/openvpn`).
-- Linux classique : `sudo apt install openvpn`.
-
-**WireGuard** — `wg` et `wg-quick` présents, **plus** le support noyau WireGuard.
-- Vérifier rapidement sur la box :
+- **WireGuard** : `wg` + `wg-quick` et le support noyau WireGuard. Test rapide :
   ```bash
   which wg wg-quick
-  ip link add wgtest type wireguard 2>&1 && echo "WG noyau OK" && ip link del wgtest
+  ip link add wgtest type wireguard 2>&1 && echo OK && ip link del wgtest
   ```
-- CoreELEC/LibreELEC : selon le build, WireGuard est inclus dans le noyau ou
-  s'ajoute via Entware (`opkg install wireguard-tools`). Sans `wg-quick`,
-  l'addon le signalera à la connexion.
+  Sur CoreELEC/LibreELEC : selon le build, inclus au noyau ou via Entware
+  (`opkg install wireguard-tools`).
+- **OpenVPN** : binaire `openvpn` (addon *OpenVPN for LibreELEC*, ou
+  `apt install openvpn`).
 
 Sur CoreELEC/LibreELEC, Kodi tourne en root : pas de sudo nécessaire.
 
-## 3. Récupérer ses configurations ProtonVPN
+## Récupérer ses configurations
 
 Sur https://account.protonvpn.com → **Downloads** :
+- **WireGuard** : créer une clé pour l'appareil → télécharger le `.conf`
+  (clés incluses, **aucun identifiant à saisir**).
+- **OpenVPN** : télécharger les `.ovpn`, et renseigner l'identifiant
+  **OpenVPN/IKEv2** (Account → OpenVPN/IKEv2, **≠ e-mail Proton**).
 
-- **OpenVPN** : *OpenVPN configuration files* → Platform Router/Linux, UDP ou
-  TCP, télécharger les `.ovpn`. Les identifiants OpenVPN/IKEv2 (Account →
-  OpenVPN/IKEv2, **différents de votre e-mail**) sont à saisir dans les réglages.
-- **WireGuard** : *WireGuard configuration* → créer une clé pour l'appareil
-  (ex. « Cormoran »), choisir NetShield / NAT / etc., télécharger le `.conf`.
-  Tout est dans le fichier (clés comprises) : **aucun identifiant à saisir**.
+## Installer
 
-## 4. Installer l'addon
-
-1. Copier **`kodi-addon-protonvpn-0.3.0.zip`** sur la box.
+1. Copier `kodi-addon-protonvpn-0.0.8.zip` sur la box.
 2. Système → Add-ons → activer **Sources inconnues**.
-3. Add-ons → **Installer depuis un fichier zip** → sélectionner le zip.
+3. Add-ons → **Installer depuis un fichier zip**.
 
-L'addon apparaît dans **Add-ons → Programmes → ProtonVPN**.
+## Utiliser
 
-## 5. Importer ses configurations
+- **Importer une configuration** : sélectionne un `.ovpn` ou `.conf` (jusqu'à 10).
+  Le type de VPN est reconnu automatiquement. Les fichiers sont copiés dans un
+  dossier géré par l'addon (`userdata/ProtonVPN/`), **créé automatiquement** —
+  rien à parcourir. Import dédié par backend aussi dans *Réglages → WireGuard*
+  et *Réglages → OpenVPN*.
+- **Serveurs** : liste les serveurs du **protocole actif** (l'autre est masqué).
+  Choisis-en un → test + connexion (point vert = actif). Menu contextuel sur un
+  serveur → **Supprimer**.
+- **Connexion rapide** : se connecte au meilleur serveur du protocole par défaut.
+- **Tester la connexion** : vérifie le dernier serveur (ou le protocole par
+  défaut) et affiche le **pays + l'IP publique** si OK.
+- **Stats** / **Journaux** : état, durée, âge du handshake (WireGuard), IP
+  publique, débit reçu/envoyé, et le journal des événements.
 
-Ouvrir l'addon → **Importer une configuration**, puis sélectionner un fichier
-`.ovpn` (OpenVPN) ou `.conf` (WireGuard). Répéter pour autant de serveurs que
-souhaité — vous pourrez ensuite choisir lequel utiliser dans la liste. Le
-backend est déduit automatiquement du type de fichier (tag **WG** ou
-**UDP/TCP** dans la liste).
+## Indicateur dans le header du skin
 
-> Alternative : pointer un dossier de configs via *Réglages → Configuration →
-> Dossier de configurations* (facultatif) ; l'addon le scanne récursivement
-> (`.ovpn` et `.conf`).
+L'addon publie l'état sur la fenêtre d'accueil :
+`Window(home).Property(protonvpn.connected)` (`true`/`false`) et
+`Window(home).Property(protonvpn.header)` (ex. « VPN · FI »). Un skin peut
+l'afficher dans son header, par exemple :
 
-## 6. Configurer
+```
+$INFO[Window(home).Property(protonvpn.header)]
+```
 
-Add-ons → Programmes → **ProtonVPN** → *(menu contextuel)* **Paramètres** :
+Activable via *Réglages → Accueil → Indicateur VPN dans le header du skin*.
 
-- **Configuration**
-  - *Importer une configuration* (bouton).
-  - *Identifiant / Mot de passe ProtonVPN (OpenVPN/IKEv2)* → **OpenVPN
-    uniquement** (le WireGuard n'en a pas besoin).
-  - *Dossier de configurations* (facultatif).
-- **Connexion**
-  - *Protocole préféré (OpenVPN)*, *NetShield (OpenVPN)*, *NAT modéré
-    (OpenVPN)* : pour WireGuard, ces options sont figées à la génération du
-    `.conf` côté ProtonVPN (voir les commentaires en tête du fichier).
-  - *Délai de connexion*, *Exécutable OpenVPN*, *Exécutable wg-quick*, *sudo*.
-- **Service** : connexion automatique au démarrage (+ pays par défaut),
-  reconnexion auto, déconnexion à la fermeture de Kodi.
+## Réglages
 
-## 7. Utiliser
+Organisés en **Accueil / WireGuard / OpenVPN / Avancé** :
+- **Accueil** : protocole par défaut (WireGuard/OpenVPN, masque l'autre),
+  connexion rapide, test, connexion auto (+ pays), reconnexion auto,
+  déconnexion à la fermeture, indicateur header.
+- **WireGuard** : import WireGuard, chemin `wg-quick`.
+- **OpenVPN** : import OpenVPN, identifiants OpenVPN/IKEv2, protocole UDP/TCP,
+  NetShield, NAT modéré, chemin `openvpn`.
+- **Avancé** : délai de connexion, intervalle de surveillance, sudo, API.
 
-Ouvrir l'addon :
+> Pour WireGuard, NetShield / NAT / Bouncing sont **figés à la génération** du
+> `.conf` côté ProtonVPN (visible dans les commentaires en tête du fichier).
 
-- **En-tête** : état courant (connecté / serveur / IP, ou « reconnexion »).
-- **Connexion rapide (serveur aléatoire)**, **Reconnecter le dernier serveur**.
-- **Parcourir par pays** → choisir un serveur (le backend suit le type).
-- **Tous les serveurs**, **Importer une configuration**, **Tester la connexion**.
+## Dépannage
 
-## 8. OpenVPN ou WireGuard ?
-
-- **WireGuard** : plus rapide à établir, plus léger, et plus stable à surveiller
-  (l'addon mesure l'âge du dernier *handshake*). NetShield/NAT/Bouncing sont
-  choisis au moment de générer le `.conf`.
-- **OpenVPN** : compatible partout, NetShield/NAT réglables à la volée via les
-  réglages (suffixes d'identifiant), choix UDP/TCP.
-
-Vous pouvez importer les deux et basculer en choisissant la config voulue.
-
-## 9. Comment ça marche
-
-- Chaque fichier importé contient déjà ses secrets (CA + tls-crypt pour
-  OpenVPN, paire de clés pour WireGuard) : **rien de sensible n'est codé en
-  dur**. Les fichiers sont copiés dans l'espace privé de l'addon en `0600`.
-- **OpenVPN** est lancé en sous-processus durci (sortie propre sur tunnel mort,
-  ré-auth non-interactive…). **WireGuard** est monté via `wg-quick up/down`.
-- Un service de fond surveille la connexion et la rétablit avec un *backoff*
-  (5/15/30/60 s), via une machine à états partagée avec l'interface.
-
-## 10. Dépannage
-
-- **WireGuard : « outils introuvables »** → installer `wireguard-tools`
-  (`wg`, `wg-quick`) et vérifier le support noyau (cf. §2).
-- **WireGuard ne monte pas** → consulter la sortie de `wg-quick` remontée par
-  l'addon ; souvent un souci de DNS (géré : la ligne `DNS` est retirée si aucun
-  resolvconf n'est présent) ou de droits (activer *sudo* hors CoreELEC).
+- **WireGuard : outils introuvables** → installer `wireguard-tools` et vérifier
+  le support noyau.
 - **OpenVPN : AUTH_FAILED** → identifiant OpenVPN/IKEv2 (≠ e-mail) + mot de passe.
-- **Binaire introuvable** → renseigner *Exécutable OpenVPN* / *Exécutable
-  wg-quick* dans les réglages.
-- **Journaux** : OpenVPN dans
-  `addon_data/service.protonvpn.manager/protonvpn.openvpn.log` ; pour le reste,
-  filtrer `service.protonvpn.manager` dans `kodi.log`.
+- **Binaire introuvable** → renseigner le chemin dans les réglages.
+- **Journaux** : vue *Stats / Journaux*, ou `protonvpn.openvpn.log` /
+  `service.protonvpn.manager` dans `kodi.log`.
 
-## 11. Limites connues
+## Limites
 
-- Pas de *kill-switch* (nécessiterait des règles iptables/nftables sur la box).
-- WireGuard : NetShield/NAT/Bouncing ne sont pas modifiables depuis l'addon
-  (ils sont fixés à la génération du `.conf`).
-- Drapeaux pays optionnels : déposer des PNG dans `resources/flags/<cc>.png`.
+- Pas de kill-switch (nécessiterait iptables/nftables sur la box).
+- WireGuard : options NetShield/NAT non modifiables depuis l'addon.
 
 ---
-
-## Licence
 
 Distribué sous **GPL-2.0-or-later** (voir `LICENSE.txt`). Projet indépendant,
 non affilié à Proton AG.

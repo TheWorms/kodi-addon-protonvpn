@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# ProtonVPN
-# Plugin GUI: browse servers by country, connect/disconnect, show status.
-#
-# Action entries (connect, disconnect, quick, ...) are folder items. Their
-# handler performs the work and then re-renders the root menu in the same
-# directory call, so Kodi always gets a properly ended directory.
+# ProtonVPN - plugin GUI
+# The active protocol (Settings -> Accueil -> default protocol) decides which
+# servers are shown; the other backend is hidden. Import, connect, test,
+# delete, stats and logs are all reachable from the launched add-on.
 
 import sys
 import os
@@ -18,117 +16,130 @@ import xbmcplugin
 from lib import common
 from lib import configs
 from lib import vpn
-from lib import protonapi
+from lib import statswidget
 
 HANDLE = int(sys.argv[1])
 BASE = sys.argv[0]
 ICON = os.path.join(common.ADDON_PATH, "resources", "icon.png")
+
+MAX_CONFIGS = 10
 
 
 def build_url(**kwargs):
     return BASE + "?" + urlencode(kwargs)
 
 
-def add_item(label, url, folder=True, icon=None, info=None):
+def add_item(label, url, folder=True, icon=None, info=None, context=None):
     li = xbmcgui.ListItem(label=label)
     li.setArt({"icon": icon or ICON, "thumb": icon or ICON})
     if info:
         li.setInfo("video", {"plot": info})
+    if context:
+        li.addContextMenuItems(context)
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=folder)
 
 
+def _active_backend():
+    return common.get_setting("default_protocol", "wireguard")
+
+
+def _backend_name(backend):
+    return "WireGuard" if backend == "wireguard" else "OpenVPN"
+
+
 # ---------------------------------------------------------------------------
-# Views
+# Home
 # ---------------------------------------------------------------------------
 
 def view_root():
     state = common.get_state()
-    all_cfg = configs.scan()
+    backend = _active_backend()
+    total = len(configs.scan())
 
-    if not all_cfg:
-        add_item("[COLOR orange]%s[/COLOR]" % common.L(32075),
-                 build_url(action="import"))
-        add_item(common.L(32145), build_url(action="import"))
-        add_item(common.L(32007), build_url(action="settings"))
-        xbmcplugin.endOfDirectory(HANDLE)
-        return
-
+    # Status header
     if state["connected"]:
         ip = state.get("ip") or ""
         head = "[COLOR lime]%s[/COLOR] %s" % (common.L(32060), state["server"])
         if ip:
             head += "  (%s)" % ip
         add_item(head, build_url(action="status"))
-        add_item("[COLOR red]%s[/COLOR]" % common.L(32062),
-                 build_url(action="disconnect"))
     elif common.get_phase() == common.PHASE_RECONNECTING:
-        add_item("[COLOR yellow]%s[/COLOR]" % common.L(32078),
-                 build_url(action="status"))
-        add_item("[COLOR red]%s[/COLOR]" % common.L(32062),
-                 build_url(action="disconnect"))
+        add_item("[COLOR yellow]%s[/COLOR]" % common.L(32078), build_url(action="status"))
     else:
-        add_item("[COLOR grey]%s[/COLOR]" % common.L(32061),
-                 build_url(action="status"))
+        add_item("[COLOR grey]%s[/COLOR]" % common.L(32061), build_url(action="status"))
 
-    add_item(common.L(32063), build_url(action="quick", mode="random"))
-    last = common.get_setting("last_config", "")
-    if last and os.path.exists(last):
-        add_item(common.L(32064), build_url(action="reconnect"))
+    # Servers (all configs; the inactive backend is greyed out, not hidden)
+    add_item("%s  [COLOR grey](%s, %d)[/COLOR]" % (common.L(32167), _backend_name(backend), total),
+             build_url(action="servers"))
+    add_item(common.L(32063), build_url(action="quick"))      # Quick connect
 
-    add_item(common.L(32065), build_url(action="countries"))
-    add_item(common.L(32066), build_url(action="all"))
-    add_item(common.L(32145), build_url(action="import"))
-    add_item(common.L(32130), build_url(action="test"))
-    add_item(common.L(32007), build_url(action="settings"))
+    # Disconnect button: always present; red when connected, grey otherwise.
+    if state["connected"] or common.get_phase() == common.PHASE_RECONNECTING:
+        add_item("[COLOR red]%s[/COLOR]" % common.L(32062), build_url(action="disconnect"))
+    else:
+        add_item("[COLOR grey]%s[/COLOR]" % common.L(32062), build_url(action="disconnect"))
 
-    xbmcplugin.setContent(HANDLE, "files")
-    xbmcplugin.endOfDirectory(HANDLE)
+    add_item(common.L(32130), build_url(action="test"))       # Test
+    add_item(common.L(32145), build_url(action="import"))     # Import
+    add_item(common.L(32151), build_url(action="widget"))     # Stats (live)
+    add_item(common.L(32152), build_url(action="logs"))       # Logs
+    add_item(common.L(32007), build_url(action="settings"))   # Settings
 
-
-def _proto_filter():
-    pref = common.get_setting("protocol_pref", "0")  # 0 both, 1 udp, 2 tcp
-    return {"0": "", "1": "udp", "2": "tcp"}.get(pref, "")
-
-
-def view_countries():
-    all_cfg = configs.filter_protocol(configs.scan(), _proto_filter())
-    if not all_cfg:
-        common.ok(common.L(32076))
-        view_root()
-        return
-    for code, name, items in configs.group_by_country(all_cfg):
-        flag = os.path.join(common.ADDON_PATH, "resources", "flags",
-                            "%s.png" % code.lower())
-        if not os.path.exists(flag):
-            flag = ICON
-        add_item("%s  [COLOR grey](%d)[/COLOR]" % (name, len(items)),
-                 build_url(action="servers", country=code), icon=flag)
-    xbmcplugin.setContent(HANDLE, "files")
-    xbmcplugin.endOfDirectory(HANDLE)
-
-
-def view_servers(country=None):
-    all_cfg = configs.filter_protocol(configs.scan(), _proto_filter())
-    if country:
-        all_cfg = [c for c in all_cfg if c["country"] == country]
-    lmap = protonapi.load_map()
-    state = common.get_state()
-    for cfg in all_cfg:
-        tag = "WG" if cfg["backend"] == "wireguard" else cfg["proto"].upper()
-        label = "%s [COLOR grey](%s)[/COLOR]" % (cfg["label"], tag)
-        load = protonapi.annotate(cfg, lmap)
-        if load is not None:
-            colour = "lime" if load < 50 else ("yellow" if load < 80 else "red")
-            label += "  [COLOR %s]%d%%[/COLOR]" % (colour, load)
-        if state["connected"] and state["config"] == cfg["path"]:
-            label = "[COLOR lime]> [/COLOR]" + label
-        add_item(label, build_url(action="connect", id=cfg["id"]), info=cfg["remote"])
     xbmcplugin.setContent(HANDLE, "files")
     xbmcplugin.endOfDirectory(HANDLE)
 
 
 # ---------------------------------------------------------------------------
-# Actions (each ends by re-rendering the root menu)
+# Servers (active protocol only)
+# ---------------------------------------------------------------------------
+
+def view_servers(backend=None):
+    active = _active_backend()
+    state = common.get_state()
+    items = configs.scan()  # all backends; the inactive one is greyed out
+    if not items:
+        add_item("[COLOR orange]%s[/COLOR]" % common.L(32075), build_url(action="import"))
+        add_item(common.L(32145), build_url(action="import"))
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+    for cfg in items:
+        tag = "WG" if cfg["backend"] == "wireguard" else cfg["proto"].upper()
+        flag = os.path.join(common.ADDON_PATH, "resources", "flags",
+                            "%s.png" % cfg["country"].lower())
+        if not os.path.exists(flag):
+            flag = ICON
+        connected_here = state["connected"] and state.get("config") == cfg["path"]
+        is_active = cfg["backend"] == active
+
+        if connected_here:
+            # Currently connected: this row disconnects.
+            label = "[COLOR lime]\u25cf[/COLOR] %s  [COLOR grey](%s)[/COLOR]  \u2014 [COLOR red]%s[/COLOR]" % (
+                cfg["label"], tag, common.L(32062))
+            url = build_url(action="disconnect")
+        elif is_active:
+            label = "%s  [COLOR grey](%s)[/COLOR]" % (cfg["label"], tag)
+            url = build_url(action="connect", id=cfg["id"])
+        else:
+            # Inactive backend: greyed out, not connectable from here.
+            label = "[COLOR 66FFFFFF]%s  (%s)[/COLOR]" % (cfg["label"], tag)
+            url = build_url(action="inactive", backend=cfg["backend"])
+
+        context = [(common.L(32168),
+                    "RunPlugin(%s)" % build_url(action="delete", id=cfg["id"]))]
+        add_item(label, url, icon=flag, context=context,
+                 info="%s  %s:%s" % (cfg["country_name"], cfg["remote"], cfg["port"]))
+    xbmcplugin.setContent(HANDLE, "files")
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def do_inactive(backend):
+    common.notify(common.L(32180) % _backend_name(backend))
+    if HANDLE >= 0:
+        view_servers()
+
+
+# ---------------------------------------------------------------------------
+# Actions
 # ---------------------------------------------------------------------------
 
 def do_connect(config_id):
@@ -153,14 +164,14 @@ def do_connect(config_id):
     view_root()
 
 
-def do_quick(_mode):
-    import random
-    all_cfg = configs.filter_protocol(configs.scan(), _proto_filter())
-    if not all_cfg:
+def do_quick():
+    backend = _active_backend()
+    cand = [c for c in configs.scan() if c["backend"] == backend]
+    if not cand:
         common.ok(common.L(32076))
         view_root()
         return
-    do_connect(random.choice(all_cfg)["id"])
+    do_connect(cand[0]["id"])
 
 
 def do_disconnect():
@@ -187,54 +198,58 @@ def do_status():
     view_root()
 
 
-def do_settings():
-    common.open_settings()
-    view_root()
-
-
-def do_import():
-    path = xbmcgui.Dialog().browse(1, common.L(32142), "files",
-                                   ".ovpn|.conf", False, False)
+def do_import(kind=None):
+    if len(configs.scan()) >= MAX_CONFIGS:
+        common.ok(common.L(32163) % MAX_CONFIGS)
+        if HANDLE >= 0:
+            view_root()
+        return
+    mask = {"wg": ".conf", "ovpn": ".ovpn"}.get(kind, ".ovpn|.conf")
+    path = xbmcgui.Dialog().browse(1, common.L(32142), "files", mask, False, False)
     if not path or os.path.isdir(path):
         if HANDLE >= 0:
             view_root()
         return
     cfg = configs.import_file(path)
-    if cfg:
-        common.notify(common.L(32143) % cfg["label"])
-    else:
+    if not cfg:
         common.ok(common.L(32144))
+        if HANDLE >= 0:
+            view_root()
+        return
+    if cfg.get("_existed"):
+        common.ok(common.L(32176) % cfg["label"])
+    else:
+        common.event("import %s (%s)" % (cfg["label"], cfg["backend"]))
+        common.notify(common.L(32143) % cfg["label"])
     if HANDLE >= 0:
-        view_root()
+        view_servers(cfg["backend"])
+
+
+def do_delete(config_id):
+    cfg = configs.find_by_id(config_id)
+    name = cfg["label"] if cfg else config_id
+    if common.yesno(common.L(32169) % name):
+        if configs.delete_config(config_id):
+            common.event("suppression %s" % name)
+            common.notify(common.L(32170) % name)
+    if HANDLE >= 0:
+        view_servers()
+    else:
+        xbmc.executebuiltin("Container.Refresh")
 
 
 def _pick_test_config():
-    all_cfg = configs.filter_protocol(configs.scan(), _proto_filter())
-    if not all_cfg:
-        return None
-    cc = (common.get_setting("default_country", "") or "").upper()
-    if cc:
-        for c in all_cfg:
-            if c["country"] == cc:
-                return c
-    return all_cfg[0]
+    last = common.get_setting("last_config", "")
+    if last and os.path.exists(last):
+        cfg = configs.parse_config(last)
+        if cfg:
+            return cfg
+    backend = _active_backend()
+    cand = [c for c in configs.scan() if c["backend"] == backend]
+    return cand[0] if cand else None
 
 
 def do_test():
-    # Can be triggered from the GUI (real handle) or from the settings action
-    # button via RunPlugin (handle == -1). Only re-render the directory when a
-    # real handle is present.
-    folder = configs.config_folder()
-    if not folder or not os.path.isdir(folder):
-        common.ok(common.L(32075))
-        if HANDLE >= 0:
-            view_root()
-        return
-    if not common.get_setting("vpn_username", "") or not common.get_setting("vpn_password", ""):
-        common.ok(common.L(32071))
-        if HANDLE >= 0:
-            view_root()
-        return
     cfg = _pick_test_config()
     if not cfg:
         common.ok(common.L(32076))
@@ -244,20 +259,45 @@ def do_test():
     dialog = xbmcgui.DialogProgressBG()
     dialog.create(common.ADDON_NAME, common.L(32077) % cfg["label"])
     try:
-        connected = vpn.connect(cfg, quiet=True)
+        ok = vpn.connect(cfg, quiet=True)
     finally:
         dialog.close()
-    if connected:
+    if ok:
         ip = vpn.external_ip()
-        common.set_state(True, server=cfg["label"], config=cfg["path"], ip=ip or "")
-        msg = common.L(32131) % cfg["label"]
         if ip:
-            msg += "\n" + common.L(32132) % ip
+            common.set_state(True, server=cfg["label"], config=cfg["path"], ip=ip)
+        msg = common.L(32131) % cfg["label"]
+        msg += "\n%s : %s" % (common.L(32166), cfg["country_name"])
+        if ip:
+            msg += "\n%s : %s" % (common.L(32157), ip)
         common.ok(msg)
     else:
         common.ok(common.L(32074))
     if HANDLE >= 0:
         view_root()
+
+
+# ---------------------------------------------------------------------------
+# Stats / logs
+# ---------------------------------------------------------------------------
+
+def do_widget():
+    statswidget.open_widget()
+    if HANDLE >= 0:
+        view_root()
+
+
+def do_logs():
+    lines = common.read_events(120)
+    text = "\n".join(lines) if lines else common.L(32155)
+    xbmcgui.Dialog().textviewer(common.L(32152), text)
+    if HANDLE >= 0:
+        view_root()
+
+
+def do_settings():
+    common.open_settings()
+    view_root()
 
 
 # ---------------------------------------------------------------------------
@@ -268,28 +308,32 @@ def router(qs):
     params = dict(parse_qsl(qs))
     action = params.get("action")
 
-    if action == "countries":
-        view_countries()
-    elif action == "servers":
-        view_servers(params.get("country"))
-    elif action == "all":
-        view_servers(None)
+    if action == "servers":
+        view_servers()
+    elif action == "inactive":
+        do_inactive(params.get("backend", ""))
     elif action == "connect":
         do_connect(params.get("id"))
     elif action == "quick":
-        do_quick(params.get("mode", "random"))
+        do_quick()
     elif action == "disconnect":
         do_disconnect()
     elif action == "reconnect":
         do_reconnect()
     elif action == "status":
         do_status()
-    elif action == "settings":
-        do_settings()
+    elif action == "import":
+        do_import(params.get("kind"))
+    elif action == "delete":
+        do_delete(params.get("id"))
     elif action == "test":
         do_test()
-    elif action == "import":
-        do_import()
+    elif action == "widget":
+        do_widget()
+    elif action == "logs":
+        do_logs()
+    elif action == "settings":
+        do_settings()
     else:
         view_root()
 

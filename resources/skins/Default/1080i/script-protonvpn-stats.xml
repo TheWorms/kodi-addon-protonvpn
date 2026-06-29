@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+  <coordinates>
+    <system>1</system>
+    <posx>0</posx>
+    <posy>0</posy>
+  </coordinates>
+  <controls>
+    <control type="image">
+      <left>0</left><top>0</top><width>1920</width><height>1080</height>
+      <texture>pv_dim.png</texture>
+      <colordiffuse>CC000000</colordiffuse>
+    </control>
+    <control type="image">
+      <left>460</left><top>200</top><width>1000</width><height>680</height>
+      <texture border="20">pv_panel.png</texture>
+    </control>
+    <control type="label">
+      <left>505</left><top>232</top><width>910</width><height>44</height>
+      <font>font14</font><textcolor>FFFFFFFF</textcolor>
+      <label>$LOCALIZE[32178]</label>
+    </control>
+    <control type="image">
+      <left>505</left><top>292</top><width>910</width><height>4</height>
+      <texture>pv_accent.png</texture>
+    </control>
+
+    <control type="label" id="100">
+      <left>525</left><top>320</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32153]:  $INFO[Window(home).Property(protonvpn.w_state)]</label>
+    </control>
+    <control type="label" id="101">
+      <left>525</left><top>376</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32156]:  $INFO[Window(home).Property(protonvpn.w_server)]</label>
+    </control>
+    <control type="label" id="102">
+      <left>525</left><top>432</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32157]:  $INFO[Window(home).Property(protonvpn.w_ip)]</label>
+    </control>
+    <control type="label" id="103">
+      <left>525</left><top>488</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32158]:  $INFO[Window(home).Property(protonvpn.w_uptime)]</label>
+    </control>
+    <control type="label" id="104">
+      <left>525</left><top>544</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32159]:  $INFO[Window(home).Property(protonvpn.w_hs)]</label>
+    </control>
+    <control type="label" id="105">
+      <left>525</left><top>600</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32160]:  $INFO[Window(home).Property(protonvpn.w_rx)]</label>
+    </control>
+    <control type="label" id="106">
+      <left>525</left><top>656</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32161]:  $INFO[Window(home).Property(protonvpn.w_tx)]</label>
+    </control>
+    <control type="label" id="107">
+      <left>525</left><top>712</top><width>870</width><height>40</height>
+      <font>font13</font><align>left</align>
+      <label>$LOCALIZE[32177]:  $INFO[Window(home).Property(protonvpn.w_rate)]</label>
+    </control>
+
+    <control type="label">
+      <left>505</left><top>812</top><width>910</width><height>36</height>
+      <font>font12</font><align>center</align><textcolor>FF9AA0AA</textcolor>
+      <label>$LOCALIZE[32179]</label>
+    </control>
+  </controls>
+</window>

@@ -1,43 +1,61 @@
-v0.3.0
-- Double backend : OpenVPN ET WireGuard, au choix selon la config importee.
-- Import de fichiers de configuration (.ovpn et .conf WireGuard) depuis
-  l'interface ; possibilite d'importer plusieurs serveurs et de choisir.
-- Backend WireGuard via wg-quick ; liveness basee sur l'age du handshake ;
-  ligne DNS retiree automatiquement si aucun resolvconf n'est present.
-- Architecture en backends separes (lib/openvpn.py, lib/wireguard.py) avec
-  un dispatcher (lib/vpn.py) ; suivi du backend actif.
-- Tags WG / UDP / TCP dans les listes ; options NetShield/NAT/protocole
-  marquees (OpenVPN) car figees a la generation cote WireGuard.
-- Parseur OpenVPN tolerant aux noms a underscores (ex. lu-10_protonvpn_udp).
-- Retrait des mentions d'inspiration Zomboided.
+v0.0.8
+- Liste Serveurs : toutes les configs sont affichees ; le backend non
+  actif est GRISE (plus masque) et non connectable d'ici.
+- Chaque ligne : bouton Se connecter, ou Se deconnecter sur le serveur actif.
+- Drapeau pays sur chaque ligne.
+- Accueil : bouton Se deconnecter toujours present (rouge si connecte,
+  gris sinon).
 
-v0.2.0
-- Stabilité (inspiré des clients officiels ProtonVPN) :
-  * OpenVPN sort proprement quand le tunnel tombe (--remap-usr1 SIGTERM),
-    pour que « process vivant » == « tunnel vivant ».
-  * Options de session non-surveillee : --auth-retry nointeract,
-    --auth-nocache, --connect-retry-max, --persist-tun.
-  * Reconnexion a autorite unique (le service) avec backoff exponentiel
-    (5/15/30/60 s) et abandon apres 5 echecs consecutifs.
-  * Detection d'echec rapide : on n'attend plus tout le délai si OpenVPN
-    meurt avant la fin de l'initialisation.
-  * PID robuste : verification via /proc pour eviter les faux positifs de
-    reutilisation de PID.
-  * Machine a etats partagee (deconnecte/connexion/connecte/reconnexion/
-    erreur) : le service et l'interface ne se contredisent plus.
+v0.0.7
+- Nouveau widget Stats en direct (fenetre dediee) : etat, serveur, IP,
+  duree, age du handshake, recu/envoye et debit instantane, rafraichi
+  chaque seconde. Accessible via l'entree 'Stats' du menu. Retour pour fermer.
 
-v0.1.1
-- Libellés clarifiés : « Identifiant/Mot de passe ProtonVPN (OpenVPN/IKEv2) »
-  et aide rattachée au bon champ.
-- Nouveau bouton « Tester la connexion » (dans les réglages et dans le menu).
+v0.0.6
+- Apres un import, l'addon ouvre directement la liste Serveurs du backend
+  importe (on voit la config tout de suite).
+- Detection des doublons : si la configuration est deja presente, un
+  message le signale et le fichier existant n'est pas ecrase.
 
-v0.1.0
-- Première version.
-- Connexion/déconnexion ProtonVPN via OpenVPN, géré par un service de fond.
-- Interface graphique : navigation par pays, liste de serveurs, connexion rapide.
-- Lecture des fichiers .ovpn téléchargés depuis le tableau de bord ProtonVPN
-  (le certificat CA et la clé tls-crypt proviennent de vos propres fichiers).
-- Connexion automatique au démarrage, reconnexion en cas de coupure.
-- NetShield (+f1 / +f2) et NAT modéré (+nr) via suffixe d'identifiant.
-- Enrichissement optionnel de la charge serveur via l'API logicals.
-- Langues : anglais, français.
+v0.0.5
+- Drapeaux pays dans la liste Serveurs (resources/flags/<cc>.png),
+  60 pays couverts. Icone par defaut si un pays manque.
+
+v0.0.4
+- Arret de Kodi : plus aucun appel a l'API addon pendant le teardown
+  (disconnect_on_exit mis en cache) -> journal propre, plus de ligne
+  "Unknown addon id" a l'extinction.
+
+v0.0.3
+- Reglages reorganises : Accueil / WireGuard / OpenVPN / Avance.
+- Protocole par defaut (Accueil) : le backend non choisi est masque
+  (serveurs, connexion rapide, test).
+- Import dedie par backend (WireGuard / OpenVPN), detection auto du type.
+- Dossier de configs cree automatiquement dans userdata/ProtonVPN :
+  plus besoin de parcourir userdata (reglage 'dossier' supprime).
+- Suppression d'une configuration via le menu contextuel (Serveurs).
+- Test de connexion : affiche le pays et l'IP publique si OK.
+- Vue Serveurs filtree sur le protocole actif.
+
+v0.0.2
+- Correctif : le reglage "Dossier de configurations" (config_folder)
+  ne provoque plus l'erreur "error reading the default value" et s'affiche
+  bien dans l'onglet Configuration (ajout de allowempty).
+- get_addon() et la lecture des reglages tolerent l'arret de Kodi
+  (plus d'erreur "Unknown addon id" a l'extinction).
+- WireGuard : l'IPv6 est retire de la config avant wg-quick pour eviter
+  l'echec ip6tables (table 'raw' absente) sur CoreELEC.
+
+v0.0.1
+- Première version publique.
+- Choix explicite WireGuard ou OpenVPN (deux entrées distinctes).
+- Saisie des identifiants OpenVPN/IKEv2 (non requis pour WireGuard).
+- Import de fichiers de configuration (.ovpn et .conf), jusqu'à 10.
+- Connexion à une configuration : test puis connexion, état actif visible.
+- Bouton « Tester la connexion ».
+- Vue Stats / Journaux : état, durée, handshake, IP, débit reçu/envoyé,
+  journal des événements.
+- Indicateur d'état VPN exposé pour le header du skin (propriété de fenêtre).
+- Quelques réglages : protocole par défaut, connexion auto, reconnexion auto,
+  déconnexion à la fermeture, NetShield/NAT (OpenVPN), pays par défaut.
+- Service de fond : surveillance, reconnexion à backoff, machine à états.

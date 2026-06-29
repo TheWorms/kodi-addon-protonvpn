@@ -48,9 +48,13 @@ def connect(config, quiet=False):
     mod = wireguard if backend == "wireguard" else openvpn
     ok = mod.connect(cfg, quiet=quiet)
     if ok:
+        import time
         common.set_setting("last_config", cfg["path"])
         common.set_setting("last_backend", backend)
         _set_active(backend)
+        common.set_since(time.time())
+        common.set_header("VPN \u00b7 %s" % (cfg.get("country") or cfg.get("label") or ""))
+        common.event("connecte %s (%s)" % (cfg.get("label", ""), backend))
     return ok
 
 
@@ -63,6 +67,9 @@ def disconnect(quiet=False):
         openvpn.disconnect(quiet=quiet)
         wireguard.disconnect(quiet=True)
     _set_active("")
+    common.set_since(0)
+    common.set_header("")
+    common.event("deconnecte")
     return True
 
 

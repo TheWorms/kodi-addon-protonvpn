@@ -228,3 +228,119 @@ msgstr ""
 msgctxt "#32147"
 msgid "wg-quick executable (leave blank to auto-detect)"
 msgstr ""
+
+msgctxt "#32151"
+msgid "Stats / Logs"
+msgstr ""
+
+msgctxt "#32152"
+msgid "Logs"
+msgstr ""
+
+msgctxt "#32153"
+msgid "State"
+msgstr ""
+
+msgctxt "#32154"
+msgid "Active"
+msgstr ""
+
+msgctxt "#32155"
+msgid "Inactive"
+msgstr ""
+
+msgctxt "#32156"
+msgid "Server"
+msgstr ""
+
+msgctxt "#32157"
+msgid "Public IP"
+msgstr ""
+
+msgctxt "#32158"
+msgid "Uptime"
+msgstr ""
+
+msgctxt "#32159"
+msgid "Handshake"
+msgstr ""
+
+msgctxt "#32160"
+msgid "Received"
+msgstr ""
+
+msgctxt "#32161"
+msgid "Sent"
+msgstr ""
+
+msgctxt "#32163"
+msgid "Limit of %d configurations reached"
+msgstr ""
+
+msgctxt "#32164"
+msgid "Default protocol (quick connect)"
+msgstr ""
+
+msgctxt "#32165"
+msgid "VPN indicator in the skin header"
+msgstr ""
+
+msgctxt "#32166"
+msgid "Country"
+msgstr ""
+
+msgctxt "#32167"
+msgid "Servers"
+msgstr ""
+
+msgctxt "#32168"
+msgid "Delete"
+msgstr ""
+
+msgctxt "#32169"
+msgid "Delete configuration "%s"?"
+msgstr ""
+
+msgctxt "#32170"
+msgid "Deleted: %s"
+msgstr ""
+
+msgctxt "#32171"
+msgid "Import a WireGuard configuration"
+msgstr ""
+
+msgctxt "#32172"
+msgid "Import an OpenVPN configuration"
+msgstr ""
+
+msgctxt "#32173"
+msgid "Home"
+msgstr ""
+
+msgctxt "#32174"
+msgid "WireGuard"
+msgstr ""
+
+msgctxt "#32175"
+msgid "OpenVPN"
+msgstr ""
+
+msgctxt "#32176"
+msgid "Configuration already present: %s"
+msgstr ""
+
+msgctxt "#32177"
+msgid "Throughput"
+msgstr ""
+
+msgctxt "#32178"
+msgid "ProtonVPN stats (live)"
+msgstr ""
+
+msgctxt "#32179"
+msgid "Back to close"
+msgstr ""
+
+msgctxt "#32180"
+msgid "%s is disabled - change the default protocol (Settings > Home)"
+msgstr ""

@@ -2,58 +2,96 @@
 <settings version="1">
   <section id="service.protonvpn.manager">
 
-    <category id="setup" label="32090" help="">
+    <category id="accueil" label="32173" help="">
       <group id="1">
-        <setting id="config_folder" type="path" label="32101" help="32105">
+        <setting id="default_protocol" type="string" label="32164">
           <level>0</level>
-          <default></default>
+          <default>wireguard</default>
           <constraints>
-            <writable>false</writable>
+            <options>
+              <option label="WireGuard">wireguard</option>
+              <option label="OpenVPN">openvpn</option>
+            </options>
           </constraints>
-          <control type="button" format="path">
-            <heading>32101</heading>
-          </control>
+          <control type="list" format="string"/>
         </setting>
-        <setting id="vpn_username" type="string" label="32102" help="32104">
+        <setting id="quick_connect" type="action" label="32063">
           <level>0</level>
-          <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32102</heading>
-          </control>
-        </setting>
-        <setting id="vpn_password" type="string" label="32103">
-          <level>0</level>
-          <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32103</heading>
-            <hidden>true</hidden>
-          </control>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=quick)</data>
+          <control type="button" format="action"><close>false</close></control>
         </setting>
         <setting id="test_connection" type="action" label="32130">
           <level>0</level>
           <data>RunPlugin(plugin://service.protonvpn.manager/?action=test)</data>
-          <control type="button" format="action">
-            <close>false</close>
-          </control>
+          <control type="button" format="action"><close>false</close></control>
         </setting>
-        <setting id="import_config" type="action" label="32145">
+        <setting id="auto_connect" type="boolean" label="32124">
           <level>0</level>
-          <data>RunPlugin(plugin://service.protonvpn.manager/?action=import)</data>
-          <control type="button" format="action">
-            <close>false</close>
-          </control>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="default_country" type="string" label="32125">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <dependencies>
+            <dependency type="enable" setting="auto_connect">true</dependency>
+          </dependencies>
+          <control type="edit" format="string"><heading>32125</heading></control>
+        </setting>
+        <setting id="reconnect_on_drop" type="boolean" label="32126">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="disconnect_on_exit" type="boolean" label="32127">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="header_indicator" type="boolean" label="32165">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
         </setting>
       </group>
     </category>
 
-    <category id="connection" label="32091" help="">
+    <category id="wireguard" label="32174" help="">
       <group id="1">
+        <setting id="import_wg" type="action" label="32171">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=import&amp;kind=wg)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="wg_quick_path" type="string" label="32147">
+          <level>1</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32147</heading></control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="openvpn" label="32175" help="">
+      <group id="1">
+        <setting id="import_ovpn" type="action" label="32172">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=import&amp;kind=ovpn)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="vpn_username" type="string" label="32102" help="32104">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32102</heading></control>
+        </setting>
+        <setting id="vpn_password" type="string" label="32103">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32103</heading><hidden>true</hidden></control>
+        </setting>
         <setting id="protocol_pref" type="integer" label="32111">
           <level>0</level>
           <default>0</default>
@@ -83,113 +121,50 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
-        <setting id="connect_timeout" type="integer" label="32121">
-          <level>0</level>
-          <default>30</default>
-          <constraints>
-            <minimum>10</minimum>
-            <step>5</step>
-            <maximum>120</maximum>
-          </constraints>
-          <control type="slider" format="integer">
-            <popup>false</popup>
-          </control>
-        </setting>
         <setting id="openvpn_path" type="string" label="32122">
           <level>1</level>
           <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32122</heading>
-          </control>
-        </setting>
-        <setting id="wg_quick_path" type="string" label="32147">
-          <level>1</level>
-          <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>32147</heading>
-          </control>
-        </setting>
-        <setting id="use_sudo" type="boolean" label="32123">
-          <level>1</level>
-          <default>false</default>
-          <control type="toggle"/>
-        </setting>
-      </group>
-    </category>
-
-    <category id="service" label="32092" help="">
-      <group id="1">
-        <setting id="auto_connect" type="boolean" label="32124">
-          <level>0</level>
-          <default>false</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="default_country" type="string" label="32125">
-          <level>0</level>
-          <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <dependencies>
-            <dependency type="enable" setting="auto_connect">true</dependency>
-          </dependencies>
-          <control type="edit" format="string">
-            <heading>32125</heading>
-          </control>
-        </setting>
-        <setting id="reconnect_on_drop" type="boolean" label="32126">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="disconnect_on_exit" type="boolean" label="32127">
-          <level>0</level>
-          <default>false</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="monitor_interval" type="integer" label="32128">
-          <level>1</level>
-          <default>15</default>
-          <constraints>
-            <minimum>5</minimum>
-            <step>5</step>
-            <maximum>60</maximum>
-          </constraints>
-          <control type="slider" format="integer">
-            <popup>false</popup>
-          </control>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32122</heading></control>
         </setting>
       </group>
     </category>
 
     <category id="advanced" label="32093" help="">
       <group id="1">
-        <setting id="use_api" type="boolean" label="32129">
+        <setting id="connect_timeout" type="integer" label="32121">
           <level>0</level>
+          <default>30</default>
+          <constraints><minimum>10</minimum><step>5</step><maximum>120</maximum></constraints>
+          <control type="slider" format="integer"><popup>false</popup></control>
+        </setting>
+        <setting id="monitor_interval" type="integer" label="32128">
+          <level>0</level>
+          <default>15</default>
+          <constraints><minimum>5</minimum><step>5</step><maximum>60</maximum></constraints>
+          <control type="slider" format="integer"><popup>false</popup></control>
+        </setting>
+        <setting id="use_sudo" type="boolean" label="32123">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="use_api" type="boolean" label="32129">
+          <level>1</level>
           <default>false</default>
           <control type="toggle"/>
         </setting>
         <setting id="last_config" type="string">
           <level>0</level>
           <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
+          <constraints><allowempty>true</allowempty></constraints>
           <visible>false</visible>
           <control type="edit" format="string"/>
         </setting>
         <setting id="last_backend" type="string">
           <level>0</level>
           <default></default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
+          <constraints><allowempty>true</allowempty></constraints>
           <visible>false</visible>
           <control type="edit" format="string"/>
         </setting>

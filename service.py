@@ -28,6 +28,17 @@ class ProtonService(xbmc.Monitor):
     def _check_interval(self):
         return common.get_int("monitor_interval", 15) or 15
 
+    def _sync_header(self):
+        if not common.get_bool("header_indicator", True):
+            common.set_header("")
+            return
+        state = common.get_state()
+        if state["connected"]:
+            if not common.get_prop(common.PROP_HEADER):
+                common.set_header("VPN \u00b7 %s" % (state.get("server", "") or ""))
+        else:
+            common.set_header("")
+
     def auto_connect(self):
         if not common.get_bool("auto_connect", False):
             return
@@ -60,10 +71,13 @@ class ProtonService(xbmc.Monitor):
             common.set_phase(common.PHASE_CONNECTED)
 
         fails = 0
+        disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
         while not self.abortRequested():
             if self.waitForAbort(self._check_interval()):
                 break
+            disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
             running = vpn.is_running()
+            self._sync_header()
 
             if self.expected and not running:
                 if not common.get_bool("reconnect_on_drop", True):
@@ -73,6 +87,7 @@ class ProtonService(xbmc.Monitor):
                     continue
 
                 if fails == 0:
+                    common.event("connexion perdue - reconnexion")
                     common.notify(common.L(32078))  # "dropped - reconnecting"
                 common.set_phase(common.PHASE_RECONNECTING)
                 common.log("Connection dropped, reconnect attempt %d" % (fails + 1))
@@ -82,10 +97,12 @@ class ProtonService(xbmc.Monitor):
                 else:
                     fails += 1
                     if fails >= self._MAX_FAILS:
+                        common.event("abandon apres %d echecs" % fails)
                         common.log("Giving up after %d reconnect failures" % fails)
                         self.expected = False
                         common.set_state(False)
                         common.set_phase(common.PHASE_ERROR)
+                        common.set_header("")
                         common.notify(common.L(32074))
                         fails = 0
                     else:
@@ -101,8 +118,9 @@ class ProtonService(xbmc.Monitor):
                     common.set_state(True, server=common.get_state().get("server", ""))
                 common.set_phase(common.PHASE_CONNECTED)
 
-        # Kodi is shutting down.
-        if common.get_bool("disconnect_on_exit", False) and vpn.is_running():
+        # Kodi is shutting down: use the value cached during the loop so we don't
+        # touch the add-on API while it is being torn down.
+        if disconnect_on_exit and vpn.is_running():
             common.log("Disconnecting on exit")
             vpn.disconnect(quiet=True)
 
