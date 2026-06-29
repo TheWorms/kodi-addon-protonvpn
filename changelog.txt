@@ -1,3 +1,36 @@
+v0.3.0
+- Double backend : OpenVPN ET WireGuard, au choix selon la config importee.
+- Import de fichiers de configuration (.ovpn et .conf WireGuard) depuis
+  l'interface ; possibilite d'importer plusieurs serveurs et de choisir.
+- Backend WireGuard via wg-quick ; liveness basee sur l'age du handshake ;
+  ligne DNS retiree automatiquement si aucun resolvconf n'est present.
+- Architecture en backends separes (lib/openvpn.py, lib/wireguard.py) avec
+  un dispatcher (lib/vpn.py) ; suivi du backend actif.
+- Tags WG / UDP / TCP dans les listes ; options NetShield/NAT/protocole
+  marquees (OpenVPN) car figees a la generation cote WireGuard.
+- Parseur OpenVPN tolerant aux noms a underscores (ex. lu-10_protonvpn_udp).
+- Retrait des mentions d'inspiration Zomboided.
+
+v0.2.0
+- Stabilité (inspiré des clients officiels ProtonVPN) :
+  * OpenVPN sort proprement quand le tunnel tombe (--remap-usr1 SIGTERM),
+    pour que « process vivant » == « tunnel vivant ».
+  * Options de session non-surveillee : --auth-retry nointeract,
+    --auth-nocache, --connect-retry-max, --persist-tun.
+  * Reconnexion a autorite unique (le service) avec backoff exponentiel
+    (5/15/30/60 s) et abandon apres 5 echecs consecutifs.
+  * Detection d'echec rapide : on n'attend plus tout le délai si OpenVPN
+    meurt avant la fin de l'initialisation.
+  * PID robuste : verification via /proc pour eviter les faux positifs de
+    reutilisation de PID.
+  * Machine a etats partagee (deconnecte/connexion/connecte/reconnexion/
+    erreur) : le service et l'interface ne se contredisent plus.
+
+v0.1.1
+- Libellés clarifiés : « Identifiant/Mot de passe ProtonVPN (OpenVPN/IKEv2) »
+  et aide rattachée au bon champ.
+- Nouveau bouton « Tester la connexion » (dans les réglages et dans le menu).
+
 v0.1.0
 - Première version.
 - Connexion/déconnexion ProtonVPN via OpenVPN, géré par un service de fond.

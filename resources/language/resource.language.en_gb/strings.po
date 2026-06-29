@@ -26,24 +26,28 @@ msgstr ""
 
 # Setup
 msgctxt "#32101"
-msgid "ProtonVPN config folder"
+msgid "ProtonVPN config folder (optional)"
 msgstr ""
 
 msgctxt "#32102"
-msgid "OpenVPN username"
+msgid "ProtonVPN username (OpenVPN/IKEv2)"
 msgstr ""
 
 msgctxt "#32103"
-msgid "OpenVPN password"
+msgid "ProtonVPN password (OpenVPN/IKEv2)"
 msgstr ""
 
 msgctxt "#32104"
-msgid "Use the OpenVPN/IKEv2 username from your ProtonVPN account dashboard - not your login email."
+msgid "OpenVPN/IKEv2 username from your ProtonVPN dashboard (OpenVPN only) - not your login email."
+msgstr ""
+
+msgctxt "#32105"
+msgid "Folder containing the ProtonVPN .ovpn files you downloaded."
 msgstr ""
 
 # Connection
 msgctxt "#32111"
-msgid "Preferred protocol"
+msgid "Preferred protocol (OpenVPN)"
 msgstr ""
 
 msgctxt "#32112"
@@ -59,7 +63,7 @@ msgid "TCP"
 msgstr ""
 
 msgctxt "#32115"
-msgid "NetShield (DNS filtering)"
+msgid "NetShield (DNS filtering, OpenVPN)"
 msgstr ""
 
 msgctxt "#32116"
@@ -75,7 +79,7 @@ msgid "Block malware, ads and trackers"
 msgstr ""
 
 msgctxt "#32119"
-msgid "Moderate NAT"
+msgid "Moderate NAT (OpenVPN)"
 msgstr ""
 
 msgctxt "#32121"
@@ -183,4 +187,44 @@ msgstr ""
 
 msgctxt "#32078"
 msgid "Connection dropped - reconnecting..."
+msgstr ""
+
+msgctxt "#32130"
+msgid "Test connection"
+msgstr ""
+
+msgctxt "#32131"
+msgid "Test successful - connected to %s"
+msgstr ""
+
+msgctxt "#32132"
+msgid "External IP: %s"
+msgstr ""
+
+msgctxt "#32140"
+msgid "WireGuard tools (wg-quick) not found - install wireguard-tools"
+msgstr ""
+
+msgctxt "#32141"
+msgid "WireGuard failed to start: %s"
+msgstr ""
+
+msgctxt "#32142"
+msgid "Import a configuration (.ovpn or .conf)"
+msgstr ""
+
+msgctxt "#32143"
+msgid "Imported: %s"
+msgstr ""
+
+msgctxt "#32144"
+msgid "Unsupported or invalid configuration file"
+msgstr ""
+
+msgctxt "#32145"
+msgid "Import a configuration"
+msgstr ""
+
+msgctxt "#32147"
+msgid "wg-quick executable (leave blank to auto-detect)"
 msgstr ""

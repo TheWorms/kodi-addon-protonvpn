@@ -24,6 +24,15 @@ PROP_CONNECTED = "protonvpn.connected"   # "true" / "false"
 PROP_SERVER = "protonvpn.server"         # human readable name of current server
 PROP_CONFIG = "protonvpn.config"         # absolute path of current .ovpn
 PROP_IP = "protonvpn.ip"                 # last known external IP
+PROP_PHASE = "protonvpn.phase"           # connection state machine phase
+
+# Connection state machine. A single shared phase keeps the service and the
+# plugin GUI in agreement (inspired by the official clients' state model).
+PHASE_DISCONNECTED = "disconnected"
+PHASE_CONNECTING = "connecting"
+PHASE_CONNECTED = "connected"
+PHASE_RECONNECTING = "reconnecting"
+PHASE_ERROR = "error"
 
 
 def get_addon():
@@ -134,6 +143,22 @@ def set_state(connected, server="", config="", ip=""):
     if not connected:
         _HOME.setProperty(PROP_SERVER, "")
         _HOME.setProperty(PROP_CONFIG, "")
+
+
+def set_phase(phase):
+    _HOME.setProperty(PROP_PHASE, phase)
+
+
+def get_phase():
+    return _HOME.getProperty(PROP_PHASE) or PHASE_DISCONNECTED
+
+
+def set_prop(key, value):
+    _HOME.setProperty(key, value or "")
+
+
+def get_prop(key):
+    return _HOME.getProperty(key)
 
 
 def get_state():

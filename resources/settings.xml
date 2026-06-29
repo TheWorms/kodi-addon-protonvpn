@@ -4,7 +4,7 @@
 
     <category id="setup" label="32090" help="">
       <group id="1">
-        <setting id="config_folder" type="path" label="32101" help="32104">
+        <setting id="config_folder" type="path" label="32101" help="32105">
           <level>0</level>
           <default></default>
           <constraints>
@@ -14,7 +14,7 @@
             <heading>32101</heading>
           </control>
         </setting>
-        <setting id="vpn_username" type="string" label="32102">
+        <setting id="vpn_username" type="string" label="32102" help="32104">
           <level>0</level>
           <default></default>
           <constraints>
@@ -33,6 +33,20 @@
           <control type="edit" format="string">
             <heading>32103</heading>
             <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="test_connection" type="action" label="32130">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=test)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="import_config" type="action" label="32145">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=import)</data>
+          <control type="button" format="action">
+            <close>false</close>
           </control>
         </setting>
       </group>
@@ -89,6 +103,16 @@
           </constraints>
           <control type="edit" format="string">
             <heading>32122</heading>
+          </control>
+        </setting>
+        <setting id="wg_quick_path" type="string" label="32147">
+          <level>1</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>32147</heading>
           </control>
         </setting>
         <setting id="use_sudo" type="boolean" label="32123">
@@ -152,6 +176,15 @@
           <control type="toggle"/>
         </setting>
         <setting id="last_config" type="string">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="last_backend" type="string">
           <level>0</level>
           <default></default>
           <constraints>

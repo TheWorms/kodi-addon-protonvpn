@@ -17,7 +17,5 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 Full text of the GPL-2.0 licence:
 https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-Architecture inspired by "VPN Manager for OpenVPN" by Zomboided
-(https://github.com/Zomboided/service.vpn.manager), also GPL-2.0.
 This add-on is an independent work and is not affiliated with or
 endorsed by Proton AG. "ProtonVPN" is a trademark of Proton AG.
