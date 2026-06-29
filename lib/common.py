@@ -36,8 +36,12 @@ PHASE_ERROR = "error"
 
 
 def get_addon():
-    # Always return a fresh handle so settings are read live.
-    return xbmcaddon.Addon(ADDON_ID)
+    # Use the current add-on context; fall back to the cached handle if Kodi is
+    # tearing the add-on down (avoids "Unknown addon id" at shutdown).
+    try:
+        return xbmcaddon.Addon()
+    except Exception:
+        return ADDON
 
 
 def ensure_profile():
@@ -56,12 +60,18 @@ def profile_file(name):
 # ---------------------------------------------------------------------------
 
 def get_setting(key, default=""):
-    val = get_addon().getSetting(key)
+    try:
+        val = get_addon().getSetting(key)
+    except Exception:
+        return default
     return val if val != "" else default
 
 
 def get_bool(key, default=False):
-    val = get_addon().getSetting(key)
+    try:
+        val = get_addon().getSetting(key)
+    except Exception:
+        return default
     if val == "":
         return default
     return val.lower() == "true"
@@ -70,12 +80,15 @@ def get_bool(key, default=False):
 def get_int(key, default=0):
     try:
         return int(get_addon().getSetting(key))
-    except (ValueError, TypeError):
+    except Exception:
         return default
 
 
 def set_setting(key, value):
-    get_addon().setSetting(key, str(value))
+    try:
+        get_addon().setSetting(key, str(value))
+    except Exception:
+        pass
 
 
 def open_settings():
@@ -159,6 +172,63 @@ def set_prop(key, value):
 
 def get_prop(key):
     return _HOME.getProperty(key)
+
+
+# Skin header indicator + connection start time (shared via Home window so a
+# skin can read Window(home).Property(protonvpn.header)).
+PROP_HEADER = "protonvpn.header"
+PROP_SINCE = "protonvpn.since"
+
+
+def set_header(text):
+    _HOME.setProperty(PROP_HEADER, text or "")
+
+
+def set_since(epoch):
+    _HOME.setProperty(PROP_SINCE, str(int(epoch)) if epoch else "")
+
+
+def get_since():
+    try:
+        return int(_HOME.getProperty(PROP_SINCE) or "0")
+    except ValueError:
+        return 0
+
+
+# ---------------------------------------------------------------------------
+# Event log (for the Stats / Journaux view)
+# ---------------------------------------------------------------------------
+
+EVENTS_FILE = "protonvpn.events.log"
+_EVENTS_MAX = 200
+
+
+def event(msg):
+    import time
+    line = "%s  %s" % (time.strftime("%H:%M:%S"), msg)
+    log(msg)
+    try:
+        path = profile_file(EVENTS_FILE)
+        lines = []
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+                lines = fh.read().splitlines()
+        lines.append(line)
+        lines = lines[-_EVENTS_MAX:]
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+    except OSError:
+        pass
+
+
+def read_events(limit=80):
+    try:
+        path = profile_file(EVENTS_FILE)
+        with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+            lines = fh.read().splitlines()
+        return lines[-limit:]
+    except OSError:
+        return []
 
 
 def get_state():

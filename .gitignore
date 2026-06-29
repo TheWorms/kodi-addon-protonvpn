@@ -3,11 +3,11 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# OS / éditeurs
+# OS
 .DS_Store
 Thumbs.db
 *.swp
 *~
 
-# Builds locaux
+# Builds
 *.zip

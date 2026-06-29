@@ -60,15 +60,30 @@ def _write_text(path, text):
         return False
 
 
+def _store_base():
+    # An addon-managed, auto-created folder under userdata so the user never has
+    # to browse to it: special://profile -> <userdata>/ProtonVPN/
+    base = xbmcvfs.translatePath("special://profile/ProtonVPN")
+    if not os.path.isdir(base):
+        try:
+            os.makedirs(base)
+        except OSError:
+            pass
+    return base
+
+
 def _profile_sub(name):
-    common.ensure_profile()
-    path = os.path.join(common.PROFILE, name)
+    path = os.path.join(_store_base(), name)
     if not os.path.isdir(path):
         try:
             os.makedirs(path)
         except OSError:
             pass
     return path
+
+
+def store_base():
+    return _store_base()
 
 
 def wg_store():
@@ -196,7 +211,8 @@ def _wg_iface_for(label):
 
 def import_file(src):
     """Copy a user-selected config file into the managed store and return its
-    parsed entry, or None if the file is not a supported config."""
+    parsed entry (with key ``_existed`` set True when an identical target was
+    already present), or None if the file is not a supported config."""
     src = xbmcvfs.translatePath(src)
     text = _read_text(src)
     if not text:
@@ -206,18 +222,27 @@ def import_file(src):
         tmp = _parse_wireguard(src, text)
         iface = _wg_iface_for(tmp["label"])
         dst = os.path.join(wg_store(), iface + ".conf")
-        if not _write_text(dst, text):
-            return None
-        return parse_config(dst)
-    if backend == "openvpn":
+    elif backend == "openvpn":
         base = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(src))
         if not base.lower().endswith(".ovpn"):
             base += ".ovpn"
         dst = os.path.join(ovpn_store(), base)
-        if not _write_text(dst, text):
-            return None
-        return parse_config(dst)
-    return None
+    else:
+        return None
+
+    if os.path.exists(dst):
+        # Already imported: don't clobber, just report it back to the caller.
+        cfg = parse_config(dst)
+        if cfg:
+            cfg["_existed"] = True
+        return cfg
+
+    if not _write_text(dst, text):
+        return None
+    cfg = parse_config(dst)
+    if cfg:
+        cfg["_existed"] = False
+    return cfg
 
 
 def delete_config(config_id):
@@ -236,10 +261,9 @@ def delete_config(config_id):
 # ---------------------------------------------------------------------------
 
 def config_folder():
-    raw = common.get_setting("config_folder", "")
-    if not raw:
-        return ""
-    return xbmcvfs.translatePath(raw)
+    # The store is now auto-managed under userdata/ProtonVPN, so there is no
+    # user-set folder to read. Kept for backward compatibility.
+    return ""
 
 
 def scan(folder=None):

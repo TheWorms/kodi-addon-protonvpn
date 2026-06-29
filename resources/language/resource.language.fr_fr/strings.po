@@ -228,3 +228,119 @@ msgstr "Importer une configuration"
 msgctxt "#32147"
 msgid "wg-quick executable (leave blank to auto-detect)"
 msgstr "Executable wg-quick (vide = detection auto)"
+
+msgctxt "#32151"
+msgid "Stats / Logs"
+msgstr "Stats / Journaux"
+
+msgctxt "#32152"
+msgid "Logs"
+msgstr "Journaux"
+
+msgctxt "#32153"
+msgid "State"
+msgstr "Etat"
+
+msgctxt "#32154"
+msgid "Active"
+msgstr "Actif"
+
+msgctxt "#32155"
+msgid "Inactive"
+msgstr "Inactif"
+
+msgctxt "#32156"
+msgid "Server"
+msgstr "Serveur"
+
+msgctxt "#32157"
+msgid "Public IP"
+msgstr "IP publique"
+
+msgctxt "#32158"
+msgid "Uptime"
+msgstr "Duree"
+
+msgctxt "#32159"
+msgid "Handshake"
+msgstr "Handshake"
+
+msgctxt "#32160"
+msgid "Received"
+msgstr "Recu"
+
+msgctxt "#32161"
+msgid "Sent"
+msgstr "Envoye"
+
+msgctxt "#32163"
+msgid "Limit of %d configurations reached"
+msgstr "Limite de %d configurations atteinte"
+
+msgctxt "#32164"
+msgid "Default protocol (quick connect)"
+msgstr "Protocole par defaut (connexion rapide)"
+
+msgctxt "#32165"
+msgid "VPN indicator in the skin header"
+msgstr "Indicateur VPN dans le header du skin"
+
+msgctxt "#32166"
+msgid "Country"
+msgstr "Pays"
+
+msgctxt "#32167"
+msgid "Servers"
+msgstr "Serveurs"
+
+msgctxt "#32168"
+msgid "Delete"
+msgstr "Supprimer"
+
+msgctxt "#32169"
+msgid "Delete configuration "%s"?"
+msgstr "Supprimer la configuration " %s " ?"
+
+msgctxt "#32170"
+msgid "Deleted: %s"
+msgstr "Supprime : %s"
+
+msgctxt "#32171"
+msgid "Import a WireGuard configuration"
+msgstr "Importer une configuration WireGuard"
+
+msgctxt "#32172"
+msgid "Import an OpenVPN configuration"
+msgstr "Importer une configuration OpenVPN"
+
+msgctxt "#32173"
+msgid "Home"
+msgstr "Accueil"
+
+msgctxt "#32174"
+msgid "WireGuard"
+msgstr "WireGuard"
+
+msgctxt "#32175"
+msgid "OpenVPN"
+msgstr "OpenVPN"
+
+msgctxt "#32176"
+msgid "Configuration already present: %s"
+msgstr "Configuration deja presente : %s"
+
+msgctxt "#32177"
+msgid "Throughput"
+msgstr "Debit"
+
+msgctxt "#32178"
+msgid "ProtonVPN stats (live)"
+msgstr "Stats ProtonVPN (en direct)"
+
+msgctxt "#32179"
+msgid "Back to close"
+msgstr "Retour pour fermer"
+
+msgctxt "#32180"
+msgid "%s is disabled - change the default protocol (Settings > Home)"
+msgstr "%s desactive - change le protocole par defaut (Reglages > Accueil)"
