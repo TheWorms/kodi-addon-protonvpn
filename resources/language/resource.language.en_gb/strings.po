@@ -348,3 +348,7 @@ msgstr ""
 msgctxt "#32181"
 msgid "Open the ProtonVPN menu"
 msgstr ""
+
+msgctxt "#32182"
+msgid "Limit of %d %s configurations reached"
+msgstr ""

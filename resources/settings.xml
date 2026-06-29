@@ -6,7 +6,7 @@
       <group id="1">
         <setting id="open_menu" type="action" label="32181">
           <level>0</level>
-          <data>ActivateWindow(Programs,plugin://service.protonvpn.manager/,return)</data>
+          <data>RunAddon(service.protonvpn.manager)</data>
           <control type="button" format="action"><close>true</close></control>
         </setting>
         <setting id="default_protocol" type="string" label="32164">

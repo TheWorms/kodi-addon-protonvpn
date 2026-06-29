@@ -63,7 +63,7 @@ Sur https://account.protonvpn.com → **Downloads** :
 
 ## Installer
 
-1. Copier `kodi-addon-protonvpn-0.0.9.zip` sur la box.
+1. Copier `kodi-addon-protonvpn-0.1.0.zip` sur la box.
 2. Système → Add-ons → activer **Sources inconnues**.
 3. Add-ons → **Installer depuis un fichier zip**.
 

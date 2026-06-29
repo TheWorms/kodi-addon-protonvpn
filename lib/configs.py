@@ -14,10 +14,13 @@
 import os
 import re
 import glob
+import shutil
 
 import xbmcvfs
 
 from lib import common
+
+MAX_PER_BACKEND = 10
 
 # --- OpenVPN file-name / content patterns ----------------------------------
 # Names look like: lu-10_protonvpn_udp.ovpn, nl-01.protonvpn.udp.ovpn,
@@ -237,6 +240,11 @@ def import_file(src):
             cfg["_existed"] = True
         return cfg
 
+    # New import: enforce the per-backend limit.
+    existing = len([c for c in scan() if c["backend"] == backend])
+    if existing >= MAX_PER_BACKEND:
+        return {"_full": True, "backend": backend}
+
     if not _write_text(dst, text):
         return None
     cfg = parse_config(dst)
@@ -266,9 +274,43 @@ def config_folder():
     return ""
 
 
+_LEGACY_DONE = False
+
+
+def _migrate_legacy():
+    """One-shot: bring configs imported by older versions (stored under the
+    add-on data profile) into the new userdata/ProtonVPN store."""
+    global _LEGACY_DONE
+    if _LEGACY_DONE:
+        return
+    _LEGACY_DONE = True
+    try:
+        legacy_base = common.PROFILE
+    except Exception:
+        return
+    for sub, dest in (("wg", wg_store), ("ovpn", ovpn_store)):
+        ldir = os.path.join(legacy_base, sub)
+        if not os.path.isdir(ldir):
+            continue
+        try:
+            names = os.listdir(ldir)
+        except OSError:
+            continue
+        for name in names:
+            src = os.path.join(ldir, name)
+            dst = os.path.join(dest(), name)
+            if os.path.isfile(src) and not os.path.exists(dst):
+                try:
+                    shutil.copy2(src, dst)
+                    common.log("Migrated legacy config %s" % name)
+                except OSError:
+                    pass
+
+
 def scan(folder=None):
     """Return parsed configs from the managed import stores plus the optional
     user folder (recursively)."""
+    _migrate_legacy()
     found = []
     seen = set()
 

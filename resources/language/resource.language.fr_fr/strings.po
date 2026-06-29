@@ -348,3 +348,7 @@ msgstr "%s desactive - change le protocole par defaut (Reglages > Accueil)"
 msgctxt "#32181"
 msgid "Open the ProtonVPN menu"
 msgstr "Ouvrir le menu ProtonVPN"
+
+msgctxt "#32182"
+msgid "Limit of %d %s configurations reached"
+msgstr "Limite de %d configurations %s atteinte"
