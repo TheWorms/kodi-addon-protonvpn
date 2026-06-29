@@ -1,0 +1,10 @@
+v0.1.0
+- Première version.
+- Connexion/déconnexion ProtonVPN via OpenVPN, géré par un service de fond.
+- Interface graphique : navigation par pays, liste de serveurs, connexion rapide.
+- Lecture des fichiers .ovpn téléchargés depuis le tableau de bord ProtonVPN
+  (le certificat CA et la clé tls-crypt proviennent de vos propres fichiers).
+- Connexion automatique au démarrage, reconnexion en cas de coupure.
+- NetShield (+f1 / +f2) et NAT modéré (+nr) via suffixe d'identifiant.
+- Enrichissement optionnel de la charge serveur via l'API logicals.
+- Langues : anglais, français.
