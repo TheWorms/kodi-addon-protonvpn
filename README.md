@@ -96,12 +96,38 @@ $INFO[Window(home).Property(protonvpn.header)]
 
 Activable via *Réglages → Accueil → Indicateur VPN dans le header du skin*.
 
+## Widget d'accueil (Arctic Zephyr)
+
+Sur le skin **Arctic Zephyr (Reloaded)**, l'addon peut installer un **widget
+ProtonVPN natif**, sélectionnable comme les autres widgets du skin. Il s'affiche
+en cartes — **État, Serveur, IP, Protocole, Durée, Trafic** — avec un panneau de
+détail **« État du tunnel »** (serveur, protocole, IP de sortie, connecté depuis,
+trafic de session). Durée, trafic et débit se mettent à jour **en direct** quand
+le tunnel est actif.
+
+- **Installer** : *Réglages → Widget → Installer le widget ProtonVPN*, puis sur
+  l'accueil *Personnaliser → Widget* → choisir **ProtonVPN** (rangé sous
+  « Infos système »).
+- **Retirer** : *Réglages → Widget → Retirer le widget ProtonVPN*.
+
+> ⚠️ **L'installation et la désinstallation du widget rechargent l'interface du
+> skin** (bref écran noir, ~1–2 s) : c'est normal, l'addon modifie des fichiers
+> du skin et force un rechargement pour les prendre en compte.
+
+> Le widget modifie des fichiers d'Arctic Zephyr (sauvegardés en `.pvpnbak`).
+> **Une mise à jour du skin écrase ces modifications** → il suffit de recliquer
+> « Installer le widget ProtonVPN » après chaque mise à jour d'Arctic Zephyr.
+
 ## Réglages
 
-Organisés en **Accueil / WireGuard / OpenVPN / Avancé** :
+Organisés en **Accueil / Serveurs / Widget / WireGuard / OpenVPN / Avancé** :
 - **Accueil** : protocole par défaut (WireGuard/OpenVPN, masque l'autre),
-  connexion rapide, test, connexion auto (+ pays), reconnexion auto,
-  déconnexion à la fermeture, indicateur header.
+  connexion rapide, test, **connexion auto au démarrage** (favori aléatoire
+  *ou* serveur choisi), reconnexion auto, déconnexion à la fermeture,
+  indicateur header.
+- **Serveurs** : gérer les serveurs favoris, se connecter à un serveur
+  WireGuard / OpenVPN, importer une configuration serveur, supprimer.
+- **Widget** : installer / retirer le widget d'accueil (voir section dédiée).
 - **WireGuard** : import WireGuard, chemin `wg-quick`.
 - **OpenVPN** : import OpenVPN, identifiants OpenVPN/IKEv2, protocole UDP/TCP,
   NetShield, NAT modéré, chemin `openvpn`.
@@ -123,6 +149,8 @@ Organisés en **Accueil / WireGuard / OpenVPN / Avancé** :
 
 - Pas de kill-switch (nécessiterait iptables/nftables sur la box).
 - WireGuard : options NetShield/NAT non modifiables depuis l'addon.
+- Widget d'accueil : **Arctic Zephyr uniquement** ; à réinstaller après une mise
+  à jour du skin (qui écrase les fichiers patchés).
 
 ---
 
