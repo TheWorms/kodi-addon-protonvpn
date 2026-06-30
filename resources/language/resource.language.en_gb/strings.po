@@ -352,3 +352,127 @@ msgstr ""
 msgctxt "#32182"
 msgid "Limit of %d %s configurations reached"
 msgstr ""
+
+msgctxt "#32183"
+msgid "Connect to a server..."
+msgstr ""
+
+msgctxt "#32185"
+msgid "Delete a server..."
+msgstr ""
+
+msgctxt "#32186"
+msgid "Widget"
+msgstr ""
+
+msgctxt "#32187"
+msgid "Create the Stats widget (favourite)"
+msgstr ""
+
+msgctxt "#32188"
+msgid "Create the Logs widget (favourite)"
+msgstr ""
+
+msgctxt "#32189"
+msgid "Widget added to favourites: %s"
+msgstr ""
+
+msgctxt "#32190"
+msgid "Connect"
+msgstr ""
+
+msgctxt "#32191"
+msgid "Show the server list"
+msgstr ""
+
+msgctxt "#32192"
+msgid "How to add a widget"
+msgstr ""
+
+msgctxt "#32193"
+msgid "To add a ProtonVPN widget to your home screen: edit your skin home, choose Add widget, then Add-ons > Programs > ProtonVPN, and pick 'Widget - Stats' or 'Widget - Logs'. The widget refreshes when the home screen reloads."
+msgstr "To add a ProtonVPN widget: Add widget > Add-ons > Programs > ProtonVPN > pick Widget Stats or Widget Logs. (The add-on is a program exposing plugin content, so it appears under the Program widget group, not Video.) It refreshes when the home screen reloads."
+
+msgctxt "#32194"
+msgid "Add 'Servers' to the menu"
+msgstr ""
+
+msgctxt "#32195"
+msgid "Shortcut added to favourites: %s"
+msgstr ""
+
+msgctxt "#32197"
+msgid "Imported: %d, already present: %d, skipped: %d"
+msgstr ""
+
+msgctxt "#32198"
+msgid "Connect to a WireGuard server"
+msgstr ""
+
+msgctxt "#32199"
+msgid "Connect to an OpenVPN server"
+msgstr ""
+
+msgctxt "#32200"
+msgid "Import one or more servers"
+msgstr ""
+
+msgctxt "#32201"
+msgid "Connected"
+msgstr ""
+
+msgctxt "#32202"
+msgid "Disconnected"
+msgstr ""
+
+msgctxt "#32203"
+msgid "Protocol"
+msgstr ""
+
+msgctxt "#32204"
+msgid "Interface"
+msgstr ""
+
+msgctxt "#32205"
+msgid "Skin not supported (Arctic Zephyr required)"
+msgstr ""
+
+msgctxt "#32206"
+msgid "Home panel installed"
+msgstr ""
+
+msgctxt "#32207"
+msgid "Operation failed"
+msgstr ""
+
+msgctxt "#32208"
+msgid "Home panel removed"
+msgstr ""
+
+msgctxt "#32209"
+msgid "Install home panel (Arctic Zephyr)"
+msgstr "Install ProtonVPN widget"
+
+msgctxt "#32210"
+msgid "Remove home panel"
+msgstr ""
+
+msgctxt "#32211"
+msgid "Manage favourites"
+msgstr ""
+
+msgctxt "#32212"
+msgid "Random quick connect (favourites)"
+msgstr ""
+
+msgctxt "#32213"
+msgid "Favourites saved: %d"
+msgstr ""
+
+msgctxt "#32214"
+msgid "Auto-connect to a server"
+msgstr ""
+
+msgctxt "#32217"
+msgid "Info: installing/removing reloads the interface (brief black screen)"
+msgstr ""

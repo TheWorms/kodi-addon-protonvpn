@@ -352,3 +352,127 @@ msgstr "Ouvrir le menu ProtonVPN"
 msgctxt "#32182"
 msgid "Limit of %d %s configurations reached"
 msgstr "Limite de %d configurations %s atteinte"
+
+msgctxt "#32183"
+msgid "Connect to a server..."
+msgstr "Se connecter a un serveur..."
+
+msgctxt "#32185"
+msgid "Delete a server..."
+msgstr "Supprimer un serveur..."
+
+msgctxt "#32186"
+msgid "Widget"
+msgstr "Widget"
+
+msgctxt "#32187"
+msgid "Create the Stats widget (favourite)"
+msgstr "Generer le widget Stats (favori)"
+
+msgctxt "#32188"
+msgid "Create the Logs widget (favourite)"
+msgstr "Generer le widget Journal (favori)"
+
+msgctxt "#32189"
+msgid "Widget added to favourites: %s"
+msgstr "Widget ajoute aux favoris : %s"
+
+msgctxt "#32190"
+msgid "Connect"
+msgstr "Se connecter"
+
+msgctxt "#32191"
+msgid "Show the server list"
+msgstr "Voir les serveurs"
+
+msgctxt "#32192"
+msgid "How to add a widget"
+msgstr "Comment ajouter un widget"
+
+msgctxt "#32193"
+msgid "To add a ProtonVPN widget to your home screen: edit your skin home, choose Add widget, then Add-ons > Programs > ProtonVPN, and pick 'Widget - Stats' or 'Widget - Logs'. The widget refreshes when the home screen reloads."
+msgstr "Pour ajouter un widget ProtonVPN a l'accueil de ton theme : Ajouter un widget > Extensions > Programmes > ProtonVPN > choisis Widget Stats ou Widget Journaux. (L'add-on est un programme exposant du contenu plugin ; c'est la categorie Programme du selecteur de widgets, pas Video.) Le widget se met a jour au rechargement de l'accueil."
+
+msgctxt "#32194"
+msgid "Add 'Servers' to the menu"
+msgstr "Ajouter Serveurs au menu (raccourci)"
+
+msgctxt "#32195"
+msgid "Shortcut added to favourites: %s"
+msgstr "Raccourci ajoute aux favoris : %s"
+
+msgctxt "#32197"
+msgid "Imported: %d, already present: %d, skipped: %d"
+msgstr "Importes : %d, deja presents : %d, ignores : %d"
+
+msgctxt "#32198"
+msgid "Connect to a WireGuard server"
+msgstr "Se connecter a un serveur WireGuard"
+
+msgctxt "#32199"
+msgid "Connect to an OpenVPN server"
+msgstr "Se connecter a un serveur OpenVPN"
+
+msgctxt "#32200"
+msgid "Import one or more servers"
+msgstr "Importer une configuration serveur"
+
+msgctxt "#32201"
+msgid "Connected"
+msgstr "Connecte"
+
+msgctxt "#32202"
+msgid "Disconnected"
+msgstr "Deconnecte"
+
+msgctxt "#32203"
+msgid "Protocol"
+msgstr "Protocole"
+
+msgctxt "#32204"
+msgid "Interface"
+msgstr "Interface"
+
+msgctxt "#32205"
+msgid "Skin not supported (Arctic Zephyr required)"
+msgstr "Theme non supporte (Arctic Zephyr requis)"
+
+msgctxt "#32206"
+msgid "Home panel installed"
+msgstr "Widget d'accueil installe"
+
+msgctxt "#32207"
+msgid "Operation failed"
+msgstr "Echec de l'operation"
+
+msgctxt "#32208"
+msgid "Home panel removed"
+msgstr "Widget d'accueil retire"
+
+msgctxt "#32209"
+msgid "Install home panel (Arctic Zephyr)"
+msgstr "Installer le widget ProtonVPN"
+
+msgctxt "#32210"
+msgid "Remove home panel"
+msgstr "Retirer le widget ProtonVPN"
+
+msgctxt "#32211"
+msgid "Manage favourites"
+msgstr "Gerer les serveurs favoris"
+
+msgctxt "#32212"
+msgid "Random quick connect (favourites)"
+msgstr "Connexion automatique aleatoire sur un favori"
+
+msgctxt "#32213"
+msgid "Favourites saved: %d"
+msgstr "Favoris enregistres : %d"
+
+msgctxt "#32214"
+msgid "Auto-connect to a server"
+msgstr "Connexion automatique sur un serveur"
+
+msgctxt "#32217"
+msgid "Info: installing/removing reloads the interface (brief black screen)"
+msgstr "Info : l'installation/desinstallation recharge l'interface (ecran noir bref)"

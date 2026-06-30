@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Widget selectionnable "ProtonVPN" (clone du widget Infos systeme d'AZ).
+     - ProtonVPNInfoItems : les cartes (Etat/Serveur/IP/Protocole/Duree/Trafic),
+       icones maison, lit protonvpn.*.
+     - ProtonVPNDetailInclude : remplace le detail "Infos systeme" affiche en bas
+       par AZ, uniquement pour notre widget (patch dans Includes_Home.xml). -->
+<includes>
+    <include name="ProtonVPNInfoItems">
+        <item>
+            <label>État</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.state)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/etat.png</icon>
+            <property name="Label3">$INFO[Window(10000).Property(protonvpn.backend)]</property>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+        <item>
+            <label>Serveur</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.server)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/serveur.png</icon>
+            <property name="Label3">$INFO[Window(10000).Property(protonvpn.country)]</property>
+            <visible>!String.IsEmpty(Window(10000).Property(protonvpn.server))</visible>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+        <item>
+            <label>IP</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.ip)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/ip.png</icon>
+            <property name="Label3">Sortie du tunnel</property>
+            <visible>!String.IsEmpty(Window(10000).Property(protonvpn.ip))</visible>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+        <item>
+            <label>Protocole</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.backend)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/protocole.png</icon>
+            <property name="Label3">$INFO[Window(10000).Property(protonvpn.iface)]</property>
+            <visible>!String.IsEmpty(Window(10000).Property(protonvpn.backend))</visible>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+        <item>
+            <label>Durée</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.uptime)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/duree.png</icon>
+            <visible>!String.IsEmpty(Window(10000).Property(protonvpn.uptime))</visible>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+        <item>
+            <label>Trafic</label>
+            <label2>$INFO[Window(10000).Property(protonvpn.rx)] / $INFO[Window(10000).Property(protonvpn.tx)]</label2>
+            <icon>special://home/addons/service.protonvpn.manager/resources/icons/trafic.png</icon>
+            <property name="Label3">$INFO[Window(10000).Property(protonvpn.rate)]</property>
+            <visible>!String.IsEmpty(Window(10000).Property(protonvpn.rx))</visible>
+            <onclick>Addon.OpenSettings(service.protonvpn.manager)</onclick>
+        </item>
+    </include>
+
+    <include name="ProtonVPNDetailInclude">
+        <control type="group">
+            <include condition="!Skin.HasSetting(widgets.fade)">Animation.Vertical.Widgets.Label</include>
+            <control type="grouplist">
+                <left>0</left>
+                <orientation>vertical</orientation>
+                <itemgap>15</itemgap>
+                <include content="MultiWidgetsHeaderLabel">
+                    <param name="label" value="État du tunnel" />
+                    <param name="visible" value="true" />
+                </include>
+                <control type="grouplist">
+                    <width>1500</width>
+                    <orientation>vertical</orientation>
+                    <usecontrolcoords>true</usecontrolcoords>
+                    <itemgap>0</itemgap>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>État : $INFO[Window(10000).Property(protonvpn.state)]</label>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>Serveur : $INFO[Window(10000).Property(protonvpn.server)]$INFO[Window(10000).Property(protonvpn.country), — ,]</label>
+                        <visible>!String.IsEmpty(Window(10000).Property(protonvpn.server))</visible>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>Protocole : $INFO[Window(10000).Property(protonvpn.backend)]$INFO[Window(10000).Property(protonvpn.iface), · ,]</label>
+                        <visible>!String.IsEmpty(Window(10000).Property(protonvpn.backend))</visible>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>IP de sortie : $INFO[Window(10000).Property(protonvpn.ip)]</label>
+                        <visible>!String.IsEmpty(Window(10000).Property(protonvpn.ip))</visible>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label/>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>Connecté depuis : $INFO[Window(10000).Property(protonvpn.uptime)]</label>
+                        <visible>!String.IsEmpty(Window(10000).Property(protonvpn.uptime))</visible>
+                    </control>
+                    <control type="label">
+                        <font>Tiny</font><width>100%</width><height>36</height>
+                        <align>left</align><textcolor>Dark2</textcolor>
+                        <label>Trafic session : ↓ $INFO[Window(10000).Property(protonvpn.rx)] · ↑ $INFO[Window(10000).Property(protonvpn.tx)]</label>
+                        <visible>!String.IsEmpty(Window(10000).Property(protonvpn.rx))</visible>
+                    </control>
+                </control>
+            </control>
+        </control>
+    </include>
+</includes>

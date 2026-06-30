@@ -5,12 +5,14 @@
 # keep window-property state up to date, optional disconnect on shutdown.
 
 import os
+import time
 
 import xbmc
 
 from lib import common
 from lib import vpn
 from lib import configs
+from lib import stats
 
 
 class ProtonService(xbmc.Monitor):
@@ -42,6 +44,27 @@ class ProtonService(xbmc.Monitor):
     def auto_connect(self):
         if not common.get_bool("auto_connect", False):
             return
+        # 1) random favourite
+        if common.get_bool("random_favorite", False):
+            favs = configs.load_favorites()
+            if favs:
+                import random
+                cfg = configs.find_by_id(random.choice(favs))
+                if cfg:
+                    common.log("Auto-connect: random favourite %s" % cfg["label"])
+                    self.expected = True
+                    vpn.connect(cfg, quiet=True)
+                    return
+        # 2) explicitly chosen server
+        aid = common.get_setting("autoconnect_id", "")
+        if aid:
+            cfg = configs.find_by_id(aid)
+            if cfg:
+                common.log("Auto-connect: chosen server %s" % cfg["label"])
+                self.expected = True
+                vpn.connect(cfg, quiet=True)
+                return
+        # 3) fallback: last server, else first of default protocol
         last = common.get_setting("last_config", "")
         if last and os.path.exists(last):
             cfg = configs.parse_config(last)
@@ -50,20 +73,19 @@ class ProtonService(xbmc.Monitor):
                 self.expected = True
                 vpn.connect(cfg, quiet=True)
                 return
-        # No usable last server: pick the first config of the default protocol,
-        # optionally filtered by the preferred country.
         backend = common.get_setting("default_protocol", "wireguard")
         all_cfg = [c for c in configs.scan() if c["backend"] == backend] or configs.scan()
-        pref_country = common.get_setting("default_country", "").upper()
-        if pref_country:
-            cand = [c for c in all_cfg if c["country"] == pref_country]
-            all_cfg = cand or all_cfg
         if all_cfg:
             common.log("Auto-connecting to %s" % all_cfg[0]["label"])
             self.expected = True
             vpn.connect(all_cfg[0], quiet=True)
 
     def loop(self):
+        try:
+            configs.refresh_counts()
+            stats.publish_home_props()
+        except Exception:
+            pass
         if common.get_bool("auto_connect", False):
             self.auto_connect()
         elif vpn.is_running():
@@ -79,12 +101,28 @@ class ProtonService(xbmc.Monitor):
 
         fails = 0
         disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
+        last_monitor = 0.0
         while not self.abortRequested():
-            if self.waitForAbort(self._check_interval()):
+            # Tick every second while connected so the widget's Durée/Trafic
+            # update live; fall back to the slower interval when idle.
+            wait = 1 if vpn.is_running() else self._check_interval()
+            if self.waitForAbort(wait):
                 break
-            disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
+
             running = vpn.is_running()
             self._sync_header()
+            try:
+                stats.publish_home_props()
+            except Exception:
+                pass
+
+            # Heavy work (reconnect / state sync) only at the monitor cadence,
+            # or immediately on a detected drop.
+            drop = self.expected and not running
+            if (time.time() - last_monitor) < self._check_interval() and not drop:
+                continue
+            last_monitor = time.time()
+            disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
 
             if self.expected and not running:
                 if not common.get_bool("reconnect_on_drop", True):

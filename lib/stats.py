@@ -45,9 +45,27 @@ def _find_tun():
     return ""
 
 
+_IP_CACHE = {"ip": "", "ts": 0.0}
+
+
+def _external_ip_cached(ttl=60):
+    now = time.time()
+    if _IP_CACHE["ip"] and (now - _IP_CACHE["ts"]) < ttl:
+        return _IP_CACHE["ip"]
+    try:
+        ip = vpn.external_ip() or ""
+    except Exception:
+        ip = ""
+    if ip:
+        _IP_CACHE["ip"] = ip
+        _IP_CACHE["ts"] = now
+    return _IP_CACHE["ip"]
+
+
 def snapshot():
     state = common.get_state()
-    backend = common.get_prop("protonvpn.backend") or common.get_setting("last_backend", "")
+    backend = (common.get_prop("protonvpn.backend")
+               or common.get_setting("last_backend", "")).strip().lower()
     snap = {
         "connected": bool(state["connected"]),
         "backend": backend,
@@ -65,6 +83,9 @@ def snapshot():
 
     if not snap["connected"]:
         return snap
+
+    if not snap["ip"]:
+        snap["ip"] = _external_ip_cached()
 
     if backend == "wireguard":
         iface = wireguard._active_iface()
@@ -102,3 +123,84 @@ def human_duration(seconds):
     if h:
         return "%dh %02dm" % (h, m)
     return "%02d:%02d" % (m, s)
+
+
+# ---------------------------------------------------------------------------
+# Home-window properties (always-on status panel)
+#
+# The service publishes these every cycle so a skin element on the home screen
+# can show live VPN status, independently of the popup dialog. Properties are
+# raw values (no colour tags) under the "protonvpn." prefix on Window(10000):
+#   protonvpn.connected   "true" / "false"
+#   protonvpn.state       localized "Connecté" / "Déconnecté"
+#   protonvpn.backend     "WireGuard" / "OpenVPN" / ""
+#   protonvpn.server      e.g. "FR#679"
+#   protonvpn.country     localized country name (from the server prefix)
+#   protonvpn.ip          public IP
+#   protonvpn.iface       tunnel interface
+#   protonvpn.uptime      human duration
+#   protonvpn.rx / .tx    human bytes
+#   protonvpn.rate        "↓ x/s  ↑ y/s"
+#   protonvpn.flag        absolute path to the country flag png (or "")
+# ---------------------------------------------------------------------------
+
+import xbmcgui  # noqa: E402
+
+_HOME_WIN = xbmcgui.Window(10000)
+_RATE_LAST = {}
+
+
+def _flag_path(server):
+    if server and len(server) >= 2 and server[:2].isalpha():
+        p = os.path.join(common.ADDON_PATH, "resources", "flags",
+                         "%s.png" % server[:2].lower())
+        if os.path.exists(p):
+            return p
+    return ""
+
+
+def publish_home_props():
+    """Publish the current VPN state into Window(10000) properties."""
+    def setp(key, value):
+        try:
+            _HOME_WIN.setProperty("protonvpn." + key, value)
+        except Exception:
+            pass
+    try:
+        snap = snapshot()
+    except Exception:
+        return
+    if not snap.get("connected"):
+        setp("connected", "false")
+        setp("state", common.L(32202))   # Déconnecté
+        for k in ("backend", "server", "country", "ip", "iface",
+                  "uptime", "rx", "tx", "rate", "flag"):
+            setp(k, "")
+        _RATE_LAST.clear()
+        _IP_CACHE["ip"] = ""
+        return
+
+    setp("connected", "true")
+    setp("state", common.L(32201))        # Connecté
+    setp("backend", "WireGuard" if snap["backend"] == "wireguard" else "OpenVPN")
+    server = snap.get("server") or ""
+    setp("server", server)
+    cc = server[:2].lower() if len(server) >= 2 and server[:2].isalpha() else ""
+    setp("country", common.country_name(cc) if cc else "")
+    setp("flag", _flag_path(server))
+    setp("ip", snap.get("ip") or "")
+    setp("iface", snap.get("iface") or "")
+    setp("uptime", human_duration(snap.get("uptime") or 0))
+    setp("rx", human_bytes(snap.get("rx") or 0))
+    setp("tx", human_bytes(snap.get("tx") or 0))
+
+    now = time.time()
+    rate = ""
+    if _RATE_LAST:
+        dt = now - _RATE_LAST.get("t", now)
+        if dt > 0:
+            drx = max(0, (snap.get("rx") or 0) - _RATE_LAST.get("rx", 0)) / dt
+            dtx = max(0, (snap.get("tx") or 0) - _RATE_LAST.get("tx", 0)) / dt
+            rate = "\u2193 %s/s  \u2191 %s/s" % (human_bytes(drx), human_bytes(dtx))
+    _RATE_LAST.update(t=now, rx=snap.get("rx") or 0, tx=snap.get("tx") or 0)
+    setp("rate", rate)

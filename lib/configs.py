@@ -362,8 +362,58 @@ def filter_protocol(configs, proto):
             if c["backend"] != "openvpn" or c["proto"] == proto]
 
 
+def counts():
+    """Return (wireguard_count, openvpn_count)."""
+    wg = ovpn = 0
+    for c in scan():
+        if c["backend"] == "wireguard":
+            wg += 1
+        elif c["backend"] == "openvpn":
+            ovpn += 1
+    return wg, ovpn
+
+
+def refresh_counts():
+    """Write 'n / MAX' as the displayed value of the connect buttons so the
+    Servers screen shows how many servers are configured per backend."""
+    wg, ovpn = counts()
+    try:
+        common.set_setting("connect_wg", "%d / %d" % (wg, MAX_PER_BACKEND))
+        common.set_setting("connect_ovpn", "%d / %d" % (ovpn, MAX_PER_BACKEND))
+    except Exception:
+        pass
+    return wg, ovpn
+
+
 def find_by_id(config_id):
     for cfg in scan():
         if cfg["id"] == config_id:
             return cfg
     return None
+
+
+# --- favourites -----------------------------------------------------------
+def favorites_path():
+    return os.path.join(_store_base(), "favorites.json")
+
+
+def load_favorites():
+    """Return the list of favourite config ids that still exist on disk."""
+    import json
+    try:
+        with open(favorites_path(), "r", encoding="utf-8") as fh:
+            ids = json.load(fh)
+    except Exception:
+        return []
+    existing = {c["id"] for c in scan()}
+    return [i for i in ids if isinstance(i, str) and i in existing]
+
+
+def save_favorites(ids):
+    import json
+    try:
+        with open(favorites_path(), "w", encoding="utf-8") as fh:
+            json.dump(list(ids), fh)
+        return True
+    except Exception:
+        return False
