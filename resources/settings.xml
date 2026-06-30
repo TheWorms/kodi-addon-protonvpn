@@ -4,11 +4,6 @@
 
     <category id="accueil" label="32173" help="">
       <group id="1">
-        <setting id="open_menu" type="action" label="32181">
-          <level>0</level>
-          <data>RunAddon(service.protonvpn.manager)</data>
-          <control type="button" format="action"><close>true</close></control>
-        </setting>
         <setting id="default_protocol" type="string" label="32164">
           <level>0</level>
           <default>wireguard</default>
@@ -25,6 +20,11 @@
           <data>RunPlugin(plugin://service.protonvpn.manager/?action=quick)</data>
           <control type="button" format="action"><close>false</close></control>
         </setting>
+        <setting id="disconnect_now" type="action" label="32062">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=disconnect)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
         <setting id="test_connection" type="action" label="32130">
           <level>0</level>
           <data>RunPlugin(plugin://service.protonvpn.manager/?action=test)</data>
@@ -35,14 +35,36 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
-        <setting id="default_country" type="string" label="32125">
+        <setting id="random_favorite" type="boolean" label="32212">
           <level>0</level>
-          <default></default>
-          <constraints><allowempty>true</allowempty></constraints>
+          <default>false</default>
           <dependencies>
             <dependency type="enable" setting="auto_connect">true</dependency>
           </dependencies>
-          <control type="edit" format="string"><heading>32125</heading></control>
+          <control type="toggle"/>
+        </setting>
+        <setting id="autoconnect_server" type="action" label="32214">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=pickautoconnect)</data>
+          <dependencies>
+            <dependency type="enable" setting="auto_connect">true</dependency>
+            <dependency type="enable" setting="random_favorite">false</dependency>
+          </dependencies>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="autoconnect_id" type="string" label="32214">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32214</heading></control>
+          <visible>false</visible>
+        </setting>
+        <setting id="autoconnect_label" type="string" label="32214">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="edit" format="string"><heading>32214</heading></control>
+          <visible>false</visible>
         </setting>
         <setting id="reconnect_on_drop" type="boolean" label="32126">
           <level>0</level>
@@ -58,6 +80,65 @@
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+
+    <category id="servers" label="32167" help="">
+      <group id="1">
+        <setting id="manage_favorites" type="action" label="32211">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=favorites)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="connect_wg" type="string" label="32198" help="">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="button" format="action">
+            <data>RunPlugin(plugin://service.protonvpn.manager/?action=pickconnect&amp;backend=wireguard)</data>
+          </control>
+        </setting>
+        <setting id="connect_ovpn" type="string" label="32199" help="">
+          <level>0</level>
+          <default></default>
+          <constraints><allowempty>true</allowempty></constraints>
+          <control type="button" format="action">
+            <data>RunPlugin(plugin://service.protonvpn.manager/?action=pickconnect&amp;backend=openvpn)</data>
+          </control>
+        </setting>
+        <setting id="import_all" type="action" label="32200">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=importmany)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+      </group>
+      <group id="2">
+        <setting id="delete_server" type="action" label="32185">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=pickdelete)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="widget" label="32186" help="">
+      <group id="1">
+        <setting id="install_panel" type="action" label="32209" help="32217">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=installpanel)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="remove_panel" type="action" label="32210" help="32217">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=removepanel)</data>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="panel_installed" type="boolean" label="32209">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+          <visible>false</visible>
         </setting>
       </group>
     </category>
