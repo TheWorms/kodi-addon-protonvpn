@@ -116,6 +116,12 @@ class ProtonService(xbmc.Monitor):
             except Exception:
                 pass
 
+            # If the user asked to disconnect (via the add-on), honour it: don't
+            # treat the down tunnel as a drop and don't auto-reconnect.
+            if common.get_prop("protonvpn.desired") == "off":
+                self.expected = False
+                fails = 0
+
             # Heavy work (reconnect / state sync) only at the monitor cadence,
             # or immediately on a detected drop.
             drop = self.expected and not running
@@ -159,6 +165,8 @@ class ProtonService(xbmc.Monitor):
                 # Healthy: keep shared state consistent (e.g. if the tunnel was
                 # brought up out of band by the plugin).
                 fails = 0
+                if common.get_prop("protonvpn.desired") == "on":
+                    self.expected = True
                 if not common.get_state()["connected"]:
                     common.set_state(True, server=common.get_state().get("server", ""))
                 common.set_phase(common.PHASE_CONNECTED)
