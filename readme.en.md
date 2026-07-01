@@ -2,6 +2,10 @@
 
 # ProtonVPN
 
+<!-- version:auto -->
+**Version : 0.5.9**
+<!-- /version:auto -->
+
 Kodi add-on to drive **ProtonVPN** with a simple interface, in **WireGuard** or
 **OpenVPN** as you prefer. Import your configurations, pick a server (test +
 connect), see the live VPN status, follow stats and logs.

@@ -2,6 +2,10 @@
 
 # ProtonVPN
 
+<!-- version:auto -->
+**Version : 0.5.9**
+<!-- /version:auto -->
+
 Addon Kodi pour piloter **ProtonVPN** avec une interface simple, en **WireGuard**
 ou **OpenVPN** au choix. Importe tes configurations, choisis un serveur (test +
 connexion), vois l'état du VPN en direct, suis les stats et les journaux.
