@@ -1,5 +1,3 @@
-**Français** · [English](readme.en.md)
-
 # ProtonVPN
 
 Addon Kodi pour piloter **ProtonVPN** avec une interface simple, en **WireGuard**
@@ -15,21 +13,6 @@ Conçu pour **CoreELEC / LibreELEC** et les autres Kodi sous Linux (testé Kodi 
 - **Dépôt** : `github.com/TheWorms/kodi-addon-protonvpn`
 - **Identifiant Kodi** : `service.protonvpn.manager`
 - **Nom affiché** : ProtonVPN · **Licence** : GPL-2.0-or-later
-
----
-
-## Installation
-
-**Recommandé — dépôt TheWorms** (mises à jour automatiques).
-
-Télécharge le dépôt en cliquant **[ICI](https://raw.githubusercontent.com/TheWorms/kodi-repo/main/zips/repository.theworms/repository.theworms.zip)**, puis dans Kodi :
-
-1. **Add-ons** → **Installer depuis un fichier zip** → sélectionne le zip téléchargé
-   *(si Kodi bloque, active **Sources inconnues** dans Système → Add-ons)*
-2. **Installer depuis un dépôt** → **TheWorms Repository** → choisis l'addon
-3. Les mises à jour seront ensuite automatiques
-
-**Installation manuelle (alternative) :** télécharge le zip de l'addon depuis la page [Releases](../../releases), puis **Add-ons** → **Installer depuis un fichier zip**.
 
 ---
 
@@ -77,6 +60,12 @@ Sur https://account.protonvpn.com → **Downloads** :
   (clés incluses, **aucun identifiant à saisir**).
 - **OpenVPN** : télécharger les `.ovpn`, et renseigner l'identifiant
   **OpenVPN/IKEv2** (Account → OpenVPN/IKEv2, **≠ e-mail Proton**).
+
+## Installer
+
+1. Copier `kodi-addon-protonvpn-0.5.9.zip` sur la box.
+2. Système → Add-ons → activer **Sources inconnues**.
+3. Add-ons → **Installer depuis un fichier zip**.
 
 ## Utiliser
 

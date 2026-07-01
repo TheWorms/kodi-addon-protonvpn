@@ -49,6 +49,7 @@ def connect(config, quiet=False):
     ok = mod.connect(cfg, quiet=quiet)
     if ok:
         import time
+        common.set_prop("protonvpn.desired", "on")
         common.set_setting("last_config", cfg["path"])
         common.set_setting("last_backend", backend)
         _set_active(backend)
@@ -60,6 +61,7 @@ def connect(config, quiet=False):
 
 def disconnect(quiet=False):
     backend = _active()
+    common.set_prop("protonvpn.desired", "off")
     if backend == "wireguard":
         wireguard.disconnect(quiet=quiet)
         openvpn.disconnect(quiet=True)
