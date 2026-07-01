@@ -1,3 +1,5 @@
+**Français** · [English](readme.en.md)
+
 # ProtonVPN
 
 Addon Kodi pour piloter **ProtonVPN** avec une interface simple, en **WireGuard**
