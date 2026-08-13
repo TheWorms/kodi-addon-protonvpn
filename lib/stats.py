@@ -45,12 +45,19 @@ def _find_tun():
     return ""
 
 
-_IP_CACHE = {"ip": "", "ts": 0.0}
+_IP_CACHE = {"ip": "", "ts": 0.0, "fail_ts": 0.0}
 
 
-def _external_ip_cached(ttl=60):
+def _external_ip_cached(ttl=60, fail_ttl=45):
     now = time.time()
     if _IP_CACHE["ip"] and (now - _IP_CACHE["ts"]) < ttl:
+        return _IP_CACHE["ip"]
+    # Cache negatif : apres un echec, ne pas retenter avant fail_ttl.
+    # Sans cela, des que la resolution echouait, on relancait jusqu'a
+    # 2 requetes HTTPS (timeout 5 s chacune) A CHAQUE appel -- precisement
+    # dans le scenario ou le tunnel est monte mais Internet coupe
+    # (= une chute en cours).
+    if _IP_CACHE["fail_ts"] and (now - _IP_CACHE["fail_ts"]) < fail_ttl:
         return _IP_CACHE["ip"]
     try:
         ip = vpn.external_ip() or ""
@@ -59,10 +66,16 @@ def _external_ip_cached(ttl=60):
     if ip:
         _IP_CACHE["ip"] = ip
         _IP_CACHE["ts"] = now
+        _IP_CACHE["fail_ts"] = 0.0
+    else:
+        _IP_CACHE["fail_ts"] = now
     return _IP_CACHE["ip"]
 
 
-def snapshot():
+def snapshot(resolve_ip=True):
+    """resolve_ip=False : ne JAMAIS declencher de requete reseau ; se contenter
+    de la derniere IP connue. Utilise par la boucle a 1 Hz du service pour ne
+    pas bloquer la machine a etats sur des appels HTTPS."""
     state = common.get_state()
     backend = (common.get_prop("protonvpn.backend")
                or common.get_setting("last_backend", "")).strip().lower()
@@ -85,7 +98,7 @@ def snapshot():
         return snap
 
     if not snap["ip"]:
-        snap["ip"] = _external_ip_cached()
+        snap["ip"] = _external_ip_cached() if resolve_ip else _IP_CACHE["ip"]
 
     if backend == "wireguard":
         iface = wireguard._active_iface()
@@ -159,15 +172,16 @@ def _flag_path(server):
     return ""
 
 
-def publish_home_props():
-    """Publish the current VPN state into Window(10000) properties."""
+def publish_home_props(resolve_ip=True):
+    """Publish the current VPN state into Window(10000) properties.
+    resolve_ip=False : aucun appel reseau (voir snapshot)."""
     def setp(key, value):
         try:
             _HOME_WIN.setProperty("protonvpn." + key, value)
         except Exception:
             pass
     try:
-        snap = snapshot()
+        snap = snapshot(resolve_ip=resolve_ip)
     except Exception:
         return
     if not snap.get("connected"):
@@ -178,6 +192,7 @@ def publish_home_props():
             setp(k, "")
         _RATE_LAST.clear()
         _IP_CACHE["ip"] = ""
+        _IP_CACHE["fail_ts"] = 0.0
         return
 
     setp("connected", "true")

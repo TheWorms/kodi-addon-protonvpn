@@ -111,8 +111,12 @@ class ProtonService(xbmc.Monitor):
 
             running = vpn.is_running()
             self._sync_header()
+            # Les ticks a 1 Hz ne font que de l'affichage : resolution de
+            # l'IP externe (appels HTTPS) uniquement a la cadence monitor,
+            # pour ne jamais bloquer la machine a etats sur du reseau.
+            due = (time.time() - last_monitor) >= self._check_interval()
             try:
-                stats.publish_home_props()
+                stats.publish_home_props(resolve_ip=due)
             except Exception:
                 pass
 

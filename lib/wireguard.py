@@ -102,7 +102,20 @@ def _active_iface():
     return ""
 
 
-def _latest_handshake(iface):
+# Cache court du dernier handshake : la boucle du service (1 Hz quand
+# connecte) et le snapshot stats interrogeaient chacun `wg show` a chaque
+# tick -> 2-3 sous-processus/seconde en continu. Un TTL de 5 s divise cela
+# sans effet perceptible : la fraicheur du handshake se juge sur une
+# fenetre de 180 s, et l'age affiche (now - hs) reste exact.
+_HS_CACHE = {"iface": "", "ts": 0.0, "val": 0}
+_HS_CACHE_TTL = 5.0
+
+
+def _latest_handshake(iface, cached=True):
+    now = time.time()
+    if (cached and _HS_CACHE["iface"] == iface
+            and (now - _HS_CACHE["ts"]) < _HS_CACHE_TTL):
+        return _HS_CACHE["val"]
     rc, out = _run([_wg_path(), "show", iface, "latest-handshakes"])
     if rc != 0:
         return 0
@@ -114,6 +127,9 @@ def _latest_handshake(iface):
                 best = max(best, int(parts[-1]))
             except ValueError:
                 pass
+    _HS_CACHE["iface"] = iface
+    _HS_CACHE["ts"] = now
+    _HS_CACHE["val"] = best
     return best
 
 
@@ -189,7 +205,7 @@ def _wait_handshake(iface, timeout):
     while time.time() < deadline:
         if monitor.abortRequested():
             return False
-        if _latest_handshake(iface) > 0:
+        if _latest_handshake(iface, cached=False) > 0:
             return True
         if not _iface_exists(iface):
             return False
@@ -207,6 +223,7 @@ def disconnect(quiet=False):
     runconf = os.path.join(configs.run_dir(), iface + ".conf")
     target = runconf if os.path.exists(runconf) else iface
     _run([_wgquick_path(), "down", target])
+    _HS_CACHE["iface"] = ""
     common.set_prop(PROP_IFACE, "")
     common.set_prop(PROP_UP, "")
     common.set_state(False)
