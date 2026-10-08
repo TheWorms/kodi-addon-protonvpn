@@ -192,6 +192,16 @@ def connect(config, quiet=False):
     name = (config.get("label") if isinstance(config, dict) else None) \
         or os.path.basename(src)
 
+    # sudo without NOPASSWD would die silently (no TTY): refuse explicitly
+    # instead of letting the user believe the tunnel is up.
+    if common.get_bool("use_sudo", False) and not common.sudo_available():
+        common.error("use_sudo enabled but passwordless sudo (NOPASSWD) is unavailable")
+        common.event("sudo sans mot de passe indisponible - VPN non lance")
+        common.set_phase(common.PHASE_ERROR)
+        if not quiet:
+            common.ok(common.L(32218))
+        return False
+
     if not _write_auth():
         if not quiet:
             common.ok(common.L(32071))  # credentials missing
@@ -232,7 +242,13 @@ def connect(config, quiet=False):
     if common.get_bool("use_sudo", False):
         cmd = ["sudo"] + cmd
 
-    common.log("Starting OpenVPN: %s" % " ".join(cmd))
+    # Debug only (not INFO), and never log the path of the credentials file.
+    log_cmd = list(cmd)
+    try:
+        log_cmd[log_cmd.index(_auth_path())] = "<auth file>"
+    except ValueError:
+        pass
+    common.debug("Starting OpenVPN: %s" % " ".join(log_cmd))
     try:
         proc = subprocess.Popen(
             cmd,

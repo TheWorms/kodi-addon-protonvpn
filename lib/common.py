@@ -96,6 +96,38 @@ def open_settings():
 
 
 # ---------------------------------------------------------------------------
+# sudo (optional "use sudo" setting)
+# ---------------------------------------------------------------------------
+
+# sudo must be passwordless (NOPASSWD) for the VPN backends to work: they run
+# without a TTY, so a password prompt would kill the child silently and the
+# user would believe the tunnel is up. The probe result is cached briefly so
+# the 1 Hz service loop does not spawn a subprocess every tick.
+_SUDO_OK = {"ts": 0.0, "ok": False}
+_SUDO_TTL = 60.0
+
+
+def sudo_available():
+    """True when passwordless sudo works right now (sudo -n true)."""
+    import subprocess
+    import time
+    now = time.time()
+    if (now - _SUDO_OK["ts"]) < _SUDO_TTL:
+        return _SUDO_OK["ok"]
+    try:
+        proc = subprocess.run(["sudo", "-n", "true"],
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              timeout=10)
+        ok = proc.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        ok = False
+    _SUDO_OK["ts"] = now
+    _SUDO_OK["ok"] = ok
+    return ok
+
+
+# ---------------------------------------------------------------------------
 # Logging / notifications
 # ---------------------------------------------------------------------------
 

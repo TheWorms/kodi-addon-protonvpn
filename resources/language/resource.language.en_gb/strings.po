@@ -476,3 +476,7 @@ msgstr ""
 msgctxt "#32217"
 msgid "Info: installing/removing reloads the interface (brief black screen)"
 msgstr ""
+
+msgctxt "#32218"
+msgid "Passwordless sudo (NOPASSWD) is not configured - VPN not started"
+msgstr ""

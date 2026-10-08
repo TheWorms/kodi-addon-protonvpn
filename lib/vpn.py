@@ -8,6 +8,7 @@
 
 import os
 import re
+import time
 
 import xbmcvfs
 
@@ -17,10 +18,24 @@ from lib import openvpn
 from lib import wireguard
 
 PROP_BACKEND = "protonvpn.backend"
+# Cross-process "connecting" flag: the plugin and the background service only
+# share window properties, so this is the only lock preventing two concurrent
+# bring-ups (e.g. two wg-quick up racing on the same interface). A stale flag
+# (holder crashed) is ignored after _CONNECT_STALE seconds.
+PROP_CONNECTING = "protonvpn.connecting"
+_CONNECT_STALE = 120
 
 
 def _set_active(backend):
     common.set_prop(PROP_BACKEND, backend or "")
+
+
+def _connect_in_progress():
+    try:
+        ts = int(common.get_prop(PROP_CONNECTING) or "0")
+    except ValueError:
+        return False
+    return bool(ts) and (time.time() - ts) < _CONNECT_STALE
 
 
 def _active():
@@ -39,6 +54,17 @@ def backend_available(backend):
 
 
 def connect(config, quiet=False):
+    if _connect_in_progress():
+        common.log("connect skipped: another connection attempt is in progress")
+        return False
+    common.set_prop(PROP_CONNECTING, str(int(time.time())))
+    try:
+        return _connect_locked(config, quiet=quiet)
+    finally:
+        common.set_prop(PROP_CONNECTING, "")
+
+
+def _connect_locked(config, quiet=False):
     cfg = _resolve(config)
     if not cfg:
         if not quiet:
@@ -48,7 +74,6 @@ def connect(config, quiet=False):
     mod = wireguard if backend == "wireguard" else openvpn
     ok = mod.connect(cfg, quiet=quiet)
     if ok:
-        import time
         common.set_prop("protonvpn.desired", "on")
         common.set_setting("last_config", cfg["path"])
         common.set_setting("last_backend", backend)

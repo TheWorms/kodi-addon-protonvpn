@@ -1,0 +1,291 @@
+--- a/addon.xml
++++ b/addon.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+ <addon id="service.protonvpn.manager"
+        name="ProtonVPN"
+-       version="0.5.10"
++       version="0.5.11"
+        provider-name="TheWorms">
+   <requires>
+     <import addon="xbmc.python" version="3.0.0"/>
+--- a/changelog.txt
++++ b/changelog.txt
+@@ -1,3 +1,27 @@
++v0.5.11
++- CORRECTIF securite (audit) : l'option 'Lancer avec sudo' echouait en silence
++  quand sudo sans mot de passe (NOPASSWD) n'est pas configure -- les backends
++  tournent sans TTY, donc le sudo mourait sans jamais demander le mot de
++  passe et l'utilisateur croyait le VPN monte. Desormais 'sudo -n true' est
++  verifie avant toute connexion (OpenVPN et WireGuard, resultat mis en cache
++  60 s), avec un message d'erreur explicite et une entree dans les journaux.
++- SECURITE identifiants : le mot de passe ProtonVPN passe en setting Kodi de
++  type 'password' (stockage chiffre par Kodi) au lieu d'un champ texte en
++  clair dans les parametres. Le fichier runtime 'protonvpn.auth' (chmod 600,
++  impose par openvpn --auth-user-pass) reste inevitable, mais il n'est plus
++  double d'un stockage permanent en clair. /!\ Re-saisir le mot de passe une
++  fois dans les parametres apres la mise a jour.
++- SECURITE logs : la ligne de commande OpenVPN complete (qui incluait le
++  chemin du fichier d'identifiants) passait au niveau INFO dans kodi.log ;
++  desormais en debug, avec le chemin d'auth masque.
++- WireGuard : quand l'adaptation de la config retire IPv6 (kernel embarque
++  sans ip6tables) ou la ligne DNS (pas de resolvconf), une entree explicite
++  est ajoutee au journal d'evenements (vue Journaux) au lieu d'une
++  suppression silencieuse.
++- Anti-course : un drapeau 'connexion en cours' partage via les proprietes
++  de fenetre empeche le service et le plugin de lancer deux montages
++  simultanes (wg-quick up concurrents sur la meme interface).
++
+ v0.5.10
+ - CORRECTIF service : la resolution de l'IP externe (2 requetes HTTPS,
+   timeout 5 s chacune) pouvait bloquer la boucle d'etat a CHAQUE tick des
+--- a/lib/common.py
++++ b/lib/common.py
+@@ -96,6 +96,38 @@
+ 
+ 
+ # ---------------------------------------------------------------------------
++# sudo (optional "use sudo" setting)
++# ---------------------------------------------------------------------------
++
++# sudo must be passwordless (NOPASSWD) for the VPN backends to work: they run
++# without a TTY, so a password prompt would kill the child silently and the
++# user would believe the tunnel is up. The probe result is cached briefly so
++# the 1 Hz service loop does not spawn a subprocess every tick.
++_SUDO_OK = {"ts": 0.0, "ok": False}
++_SUDO_TTL = 60.0
++
++
++def sudo_available():
++    """True when passwordless sudo works right now (sudo -n true)."""
++    import subprocess
++    import time
++    now = time.time()
++    if (now - _SUDO_OK["ts"]) < _SUDO_TTL:
++        return _SUDO_OK["ok"]
++    try:
++        proc = subprocess.run(["sudo", "-n", "true"],
++                              stdout=subprocess.DEVNULL,
++                              stderr=subprocess.DEVNULL,
++                              timeout=10)
++        ok = proc.returncode == 0
++    except (OSError, subprocess.SubprocessError):
++        ok = False
++    _SUDO_OK["ts"] = now
++    _SUDO_OK["ok"] = ok
++    return ok
++
++
++# ---------------------------------------------------------------------------
+ # Logging / notifications
+ # ---------------------------------------------------------------------------
+ 
+--- a/lib/openvpn.py
++++ b/lib/openvpn.py
+@@ -192,6 +192,16 @@
+     name = (config.get("label") if isinstance(config, dict) else None) \
+         or os.path.basename(src)
+ 
++    # sudo without NOPASSWD would die silently (no TTY): refuse explicitly
++    # instead of letting the user believe the tunnel is up.
++    if common.get_bool("use_sudo", False) and not common.sudo_available():
++        common.error("use_sudo enabled but passwordless sudo (NOPASSWD) is unavailable")
++        common.event("sudo sans mot de passe indisponible - VPN non lance")
++        common.set_phase(common.PHASE_ERROR)
++        if not quiet:
++            common.ok(common.L(32218))
++        return False
++
+     if not _write_auth():
+         if not quiet:
+             common.ok(common.L(32071))  # credentials missing
+@@ -232,7 +242,13 @@
+     if common.get_bool("use_sudo", False):
+         cmd = ["sudo"] + cmd
+ 
+-    common.log("Starting OpenVPN: %s" % " ".join(cmd))
++    # Debug only (not INFO), and never log the path of the credentials file.
++    log_cmd = list(cmd)
++    try:
++        log_cmd[log_cmd.index(_auth_path())] = "<auth file>"
++    except ValueError:
++        pass
++    common.debug("Starting OpenVPN: %s" % " ".join(log_cmd))
+     try:
+         proc = subprocess.Popen(
+             cmd,
+--- a/lib/vpn.py
++++ b/lib/vpn.py
+@@ -8,6 +8,7 @@
+ 
+ import os
+ import re
++import time
+ 
+ import xbmcvfs
+ 
+@@ -17,12 +18,26 @@
+ from lib import wireguard
+ 
+ PROP_BACKEND = "protonvpn.backend"
++# Cross-process "connecting" flag: the plugin and the background service only
++# share window properties, so this is the only lock preventing two concurrent
++# bring-ups (e.g. two wg-quick up racing on the same interface). A stale flag
++# (holder crashed) is ignored after _CONNECT_STALE seconds.
++PROP_CONNECTING = "protonvpn.connecting"
++_CONNECT_STALE = 120
+ 
+ 
+ def _set_active(backend):
+     common.set_prop(PROP_BACKEND, backend or "")
+ 
+ 
++def _connect_in_progress():
++    try:
++        ts = int(common.get_prop(PROP_CONNECTING) or "0")
++    except ValueError:
++        return False
++    return bool(ts) and (time.time() - ts) < _CONNECT_STALE
++
++
+ def _active():
+     return common.get_prop(PROP_BACKEND) or common.get_setting("last_backend", "")
+ 
+@@ -39,6 +54,17 @@
+ 
+ 
+ def connect(config, quiet=False):
++    if _connect_in_progress():
++        common.log("connect skipped: another connection attempt is in progress")
++        return False
++    common.set_prop(PROP_CONNECTING, str(int(time.time())))
++    try:
++        return _connect_locked(config, quiet=quiet)
++    finally:
++        common.set_prop(PROP_CONNECTING, "")
++
++
++def _connect_locked(config, quiet=False):
+     cfg = _resolve(config)
+     if not cfg:
+         if not quiet:
+@@ -48,7 +74,6 @@
+     mod = wireguard if backend == "wireguard" else openvpn
+     ok = mod.connect(cfg, quiet=quiet)
+     if ok:
+-        import time
+         common.set_prop("protonvpn.desired", "on")
+         common.set_setting("last_config", cfg["path"])
+         common.set_setting("last_backend", backend)
+--- a/lib/wireguard.py
++++ b/lib/wireguard.py
+@@ -155,12 +155,17 @@
+       (many embedded kernels lack the ip6tables 'raw' table);
+     - drop the DNS line when no resolvconf-like tool is available, otherwise
+       wg-quick aborts the whole bring-up.
++
++    Returns (sanitised_text, dropped) where ``dropped`` tells which lines were
++    removed, so the caller can warn the user instead of failing silently.
+     """
+     keep_dns = _has_resolvconf()
++    dropped = {"dns": False, "ipv6": False}
+     out = []
+     for line in text.splitlines():
+         low = line.strip().lower()
+         if low.startswith("dns") and not keep_dns:
++            dropped["dns"] = True
+             continue
+         if low.startswith("allowedips") or low.startswith("address"):
+             try:
+@@ -168,6 +173,8 @@
+             except ValueError:
+                 out.append(line)
+                 continue
++            if any(":" in p for p in val.split(",")):
++                dropped["ipv6"] = True
+             v4 = [p.strip() for p in val.split(",") if p.strip() and ":" not in p]
+             if low.startswith("allowedips") and not v4:
+                 v4 = ["0.0.0.0/0"]
+@@ -175,7 +182,7 @@
+                 out.append("%s= %s" % (key, ", ".join(v4)))
+             continue
+         out.append(line)
+-    return "\n".join(out) + "\n"
++    return "\n".join(out) + "\n", dropped
+ 
+ 
+ def _prepare_runconf(src, iface):
+@@ -187,7 +194,7 @@
+     except OSError as exc:
+         common.error("Cannot read WG config %s: %s" % (src, exc))
+         return ""
+-    text = _sanitize_conf(text)
++    text, dropped = _sanitize_conf(text)
+     dst = os.path.join(configs.run_dir(), iface + ".conf")
+     try:
+         with open(dst, "w", encoding="utf-8") as fh:
+@@ -196,6 +203,11 @@
+     except OSError as exc:
+         common.error("Cannot write WG run config: %s" % exc)
+         return ""
++    # Warn instead of silently degrading the config (event log = Journaux view).
++    if dropped.get("dns"):
++        common.event("config WG : DNS retiree (pas de resolvconf sur ce systeme)")
++    if dropped.get("ipv6"):
++        common.event("config WG : IPv6 retiree (kernel sans ip6tables)")
+     return dst
+ 
+ 
+@@ -241,6 +253,16 @@
+             common.ok(common.L(32140))
+         return False
+ 
++    # sudo without NOPASSWD would die silently (no TTY): refuse explicitly
++    # instead of letting the user believe the tunnel is up.
++    if common.get_bool("use_sudo", False) and not common.sudo_available():
++        common.error("use_sudo enabled but passwordless sudo (NOPASSWD) is unavailable")
++        common.event("sudo sans mot de passe indisponible - VPN non lance")
++        common.set_phase(common.PHASE_ERROR)
++        if not quiet:
++            common.ok(common.L(32218))
++        return False
++
+     src = config["path"] if isinstance(config, dict) else config
+     name = (config.get("label") if isinstance(config, dict) else None) \
+         or _iface_from_path(src)
+--- a/resources/settings.xml
++++ b/resources/settings.xml
+@@ -172,11 +172,11 @@
+           <constraints><allowempty>true</allowempty></constraints>
+           <control type="edit" format="string"><heading>32102</heading></control>
+         </setting>
+-        <setting id="vpn_password" type="string" label="32103">
++        <setting id="vpn_password" type="password" label="32103">
+           <level>0</level>
+           <default></default>
+           <constraints><allowempty>true</allowempty></constraints>
+-          <control type="edit" format="string"><heading>32103</heading><hidden>true</hidden></control>
++          <control type="edit" format="password"><heading>32103</heading></control>
+         </setting>
+         <setting id="protocol_pref" type="integer" label="32111">
+           <level>0</level>
+--- a/resources/language/resource.language.en_gb/strings.po
++++ b/resources/language/resource.language.en_gb/strings.po
+@@ -476,3 +476,7 @@
+ msgctxt "#32217"
+ msgid "Info: installing/removing reloads the interface (brief black screen)"
+ msgstr ""
++
++msgctxt "#32218"
++msgid "Passwordless sudo (NOPASSWD) is not configured - VPN not started"
++msgstr ""
+--- a/resources/language/resource.language.fr_fr/strings.po
++++ b/resources/language/resource.language.fr_fr/strings.po
+@@ -476,3 +476,7 @@
+ msgctxt "#32217"
+ msgid "Info: installing/removing reloads the interface (brief black screen)"
+ msgstr "Info : l'installation/desinstallation recharge l'interface (ecran noir bref)"
++
++msgctxt "#32218"
++msgid "Passwordless sudo (NOPASSWD) is not configured - VPN not started"
++msgstr "sudo sans mot de passe (NOPASSWD) non configure - VPN non lance"

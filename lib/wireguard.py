@@ -155,12 +155,17 @@ def _sanitize_conf(text):
       (many embedded kernels lack the ip6tables 'raw' table);
     - drop the DNS line when no resolvconf-like tool is available, otherwise
       wg-quick aborts the whole bring-up.
+
+    Returns (sanitised_text, dropped) where ``dropped`` tells which lines were
+    removed, so the caller can warn the user instead of failing silently.
     """
     keep_dns = _has_resolvconf()
+    dropped = {"dns": False, "ipv6": False}
     out = []
     for line in text.splitlines():
         low = line.strip().lower()
         if low.startswith("dns") and not keep_dns:
+            dropped["dns"] = True
             continue
         if low.startswith("allowedips") or low.startswith("address"):
             try:
@@ -168,6 +173,8 @@ def _sanitize_conf(text):
             except ValueError:
                 out.append(line)
                 continue
+            if any(":" in p for p in val.split(",")):
+                dropped["ipv6"] = True
             v4 = [p.strip() for p in val.split(",") if p.strip() and ":" not in p]
             if low.startswith("allowedips") and not v4:
                 v4 = ["0.0.0.0/0"]
@@ -175,7 +182,7 @@ def _sanitize_conf(text):
                 out.append("%s= %s" % (key, ", ".join(v4)))
             continue
         out.append(line)
-    return "\n".join(out) + "\n"
+    return "\n".join(out) + "\n", dropped
 
 
 def _prepare_runconf(src, iface):
@@ -187,7 +194,7 @@ def _prepare_runconf(src, iface):
     except OSError as exc:
         common.error("Cannot read WG config %s: %s" % (src, exc))
         return ""
-    text = _sanitize_conf(text)
+    text, dropped = _sanitize_conf(text)
     dst = os.path.join(configs.run_dir(), iface + ".conf")
     try:
         with open(dst, "w", encoding="utf-8") as fh:
@@ -196,6 +203,11 @@ def _prepare_runconf(src, iface):
     except OSError as exc:
         common.error("Cannot write WG run config: %s" % exc)
         return ""
+    # Warn instead of silently degrading the config (event log = Journaux view).
+    if dropped.get("dns"):
+        common.event("config WG : DNS retiree (pas de resolvconf sur ce systeme)")
+    if dropped.get("ipv6"):
+        common.event("config WG : IPv6 retiree (kernel sans ip6tables)")
     return dst
 
 
@@ -239,6 +251,16 @@ def connect(config, quiet=False):
         common.set_phase(common.PHASE_ERROR)
         if not quiet:
             common.ok(common.L(32140))
+        return False
+
+    # sudo without NOPASSWD would die silently (no TTY): refuse explicitly
+    # instead of letting the user believe the tunnel is up.
+    if common.get_bool("use_sudo", False) and not common.sudo_available():
+        common.error("use_sudo enabled but passwordless sudo (NOPASSWD) is unavailable")
+        common.event("sudo sans mot de passe indisponible - VPN non lance")
+        common.set_phase(common.PHASE_ERROR)
+        if not quiet:
+            common.ok(common.L(32218))
         return False
 
     src = config["path"] if isinstance(config, dict) else config

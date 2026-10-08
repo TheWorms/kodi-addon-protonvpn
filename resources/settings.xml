@@ -172,11 +172,11 @@
           <constraints><allowempty>true</allowempty></constraints>
           <control type="edit" format="string"><heading>32102</heading></control>
         </setting>
-        <setting id="vpn_password" type="string" label="32103">
+        <setting id="vpn_password" type="password" label="32103">
           <level>0</level>
           <default></default>
           <constraints><allowempty>true</allowempty></constraints>
-          <control type="edit" format="string"><heading>32103</heading><hidden>true</hidden></control>
+          <control type="edit" format="password"><heading>32103</heading></control>
         </setting>
         <setting id="protocol_pref" type="integer" label="32111">
           <level>0</level>
