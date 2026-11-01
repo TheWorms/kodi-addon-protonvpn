@@ -11,7 +11,10 @@
 #     de la box (route par défaut de la table main) ;
 #   - une règle « ip rule » de priorité PREF par plage Google, avant les
 #     règles de wg-quick (32764/32765) et sans être concernée par les routes
-#     0/1 + 128/1 d'OpenVPN (elles sont dans la table main).
+#     0/1 + 128/1 d'OpenVPN (elles sont dans la table main). Si le tunnel
+#     monte alors que nos règles existent déjà, wg-quick se place devant
+#     (1049/1048) : _reorder() le remet derrière, après chaque connexion et
+#     à chaque passage du service.
 #
 # Les serveurs vidéo de YouTube peuvent être hébergés chez le fournisseur
 # d'accès (caches Google « GGC ») hors de ces plages : l'addon YouTube
@@ -67,6 +70,48 @@ def _rules():
     return found
 
 
+def _wg_rule(args):
+    """Règle posée par wg-quick (« not ... fwmark ... » ou « suppress_prefixlength »)."""
+    return "suppress_prefixlength" in args or (args[:1] == ["not"] and "fwmark" in args)
+
+
+def _reorder():
+    """Remet les règles du tunnel WireGuard derrière celles de l'option.
+
+    wg-quick ajoute ses règles sans priorité : le noyau les place juste avant
+    la première règle existante. Si nos règles (1050) existent déjà quand le
+    tunnel monte (Kodi relancé, reconnexion), celles de wg-quick prennent
+    1049 et 1048, passent devant, et YouTube repart dans le tunnel. On les
+    replace dans l'ordre habituel de wg-quick, juste avant la table main
+    (32764, 32765), en ajoutant la copie avant de retirer l'originale : le
+    tunnel n'est jamais sans règle. Retourne le nombre de règles déplacées.
+    """
+    rc, out = _ip(["rule", "show"])
+    if rc != 0:
+        return 0
+    rules = []
+    for line in out.splitlines():
+        head, sep, spec = line.partition(":")
+        if not sep:
+            continue
+        try:
+            rules.append((int(head.strip()), spec.split()))
+        except ValueError:
+            continue
+    moved = 0
+    for pref, args in rules:
+        if not (0 < pref < PREF and args and _wg_rule(args)):
+            continue
+        target = 32766 - (PREF - pref)  # 1049 -> 32765, 1048 -> 32764
+        placed = (target, args) in rules or \
+            _ip(["rule", "add"] + args + ["pref", str(target)])[0] == 0
+        if placed and _ip(["rule", "del"] + args + ["pref", str(pref)])[0] == 0:
+            moved += 1
+    if moved:
+        common.log("bypass YouTube : %d regle(s) du tunnel replacee(s) apres les notres" % moved)
+    return moved
+
+
 def _gateway():
     """(passerelle, interface) de la route par défaut de la table main."""
     rc, out = _ip(["route", "show", "default", "table", "main"])
@@ -105,6 +150,7 @@ def enable():
     if len(hosts) > MAX_HOST_RULES:
         for dest in hosts:
             _ip(["rule", "del", "to", dest, "lookup", str(TABLE), "pref", str(PREF)])
+    _reorder()
     if added or common.get_prop(PROP) != str(TABLE):
         common.event("YouTube hors VPN : actif (via %s)" % gw[0])
     common.set_prop(PROP, str(TABLE))
