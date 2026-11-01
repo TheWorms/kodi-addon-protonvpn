@@ -81,6 +81,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="bypass_youtube" type="boolean" label="32219" help="32220">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
 

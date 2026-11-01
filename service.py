@@ -9,6 +9,7 @@ import time
 
 import xbmc
 
+from lib import bypass
 from lib import common
 from lib import vpn
 from lib import configs
@@ -23,9 +24,17 @@ class ProtonService(xbmc.Monitor):
     _BACKOFF = [5, 15, 30, 60]
     _MAX_FAILS = 5
 
+    _BYPASS_EVERY = 60  # secondes : option « YouTube hors VPN » réappliquée
+
     def __init__(self):
         super().__init__()
         self.expected = False  # do we want a connection to be up?
+        self.last_bypass = 0.0
+
+    def onSettingsChanged(self):
+        # Option « YouTube hors VPN » activée ou désactivée : effet immédiat
+        bypass.sync()
+        self.last_bypass = time.time()
 
     def _check_interval(self):
         return common.get_int("monitor_interval", 15) or 15
@@ -102,6 +111,8 @@ class ProtonService(xbmc.Monitor):
         fails = 0
         disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
         last_monitor = 0.0
+        bypass.sync()
+        self.last_bypass = time.time()
         while not self.abortRequested():
             # Tick every second while connected so the widget's Durée/Trafic
             # update live; fall back to the slower interval when idle.
@@ -111,6 +122,10 @@ class ProtonService(xbmc.Monitor):
 
             running = vpn.is_running()
             self._sync_header()
+            # Suit aussi un changement de passerelle de la box (DHCP).
+            if time.time() - self.last_bypass >= self._BYPASS_EVERY:
+                bypass.sync()
+                self.last_bypass = time.time()
             # Les ticks a 1 Hz ne font que de l'affichage : resolution de
             # l'IP externe (appels HTTPS) uniquement a la cadence monitor,
             # pour ne jamais bloquer la machine a etats sur du reseau.

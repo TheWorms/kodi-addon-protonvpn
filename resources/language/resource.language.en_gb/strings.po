@@ -480,3 +480,11 @@ msgstr ""
 msgctxt "#32218"
 msgid "Passwordless sudo (NOPASSWD) is not configured - VPN not started"
 msgstr ""
+
+msgctxt "#32219"
+msgid "YouTube outside the VPN (direct route)"
+msgstr ""
+
+msgctxt "#32220"
+msgid "YouTube and Google traffic leaves through your normal connection: YouTube no longer throttles the VPN address (HTTP 429). Everything else stays in the tunnel."
+msgstr ""

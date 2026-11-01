@@ -480,3 +480,11 @@ msgstr "Info : l'installation/desinstallation recharge l'interface (ecran noir b
 msgctxt "#32218"
 msgid "Passwordless sudo (NOPASSWD) is not configured - VPN not started"
 msgstr "sudo sans mot de passe (NOPASSWD) non configure - VPN non lance"
+
+msgctxt "#32219"
+msgid "YouTube outside the VPN (direct route)"
+msgstr "YouTube hors du VPN (route directe)"
+
+msgctxt "#32220"
+msgid "YouTube and Google traffic leaves through your normal connection: YouTube no longer throttles the VPN address (HTTP 429). Everything else stays in the tunnel."
+msgstr "Le trafic YouTube et Google sort par ta connexion normale : YouTube ne freine plus l'adresse du VPN (HTTP 429). Tout le reste reste dans le tunnel."
