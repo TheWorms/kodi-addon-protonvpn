@@ -39,12 +39,13 @@ def _installed():
     return out
 
 
-def _icon(addon_id):
-    try:
-        import xbmcaddon
-        return xbmcaddon.Addon(addon_id).getAddonInfo("icon") or "DefaultAddon.png"
-    except Exception:
-        return "DefaultAddon.png"
+def _art(name):
+    import os
+    return os.path.join(common.ADDON_PATH, "resources", "icons", name + ".png")
+
+
+def method_icon(method):
+    return _art("pause" if method == exceptions.PAUSE else "route")
 
 
 def method_label(method):
@@ -84,9 +85,12 @@ def manage():
     if not rows:
         common.ok(L(32241))
         return
+    methods = {ex["id"]: method_label(ex["method"]) for ex in items}
     options = []
     for aid, name, icon in rows:
-        label2 = aid if aid in known else "%s · %s" % (aid, L(32258))
+        label2 = methods.get(aid, aid)
+        if aid not in known:
+            label2 = "%s · %s" % (aid, L(32258))
         options.append(_item(name, label2, icon or "DefaultAddon.png"))
     pre = [i for i, r in enumerate(rows) if r[0] in current]
     sel = xbmcgui.Dialog().multiselect(L(32250), options, preselect=pre, useDetails=True)
@@ -107,21 +111,20 @@ def manage():
 # --- Régler un addon de la liste ----------------------------------------------
 
 def edit():
-    if not exceptions.load():
-        if common.yesno(L(32249)):
-            manage()
-        if not exceptions.load():
-            return
+    """Liste des exceptions : icône de la méthode, nom de l'addon, détail.
+    La première ligne ouvre l'ajout / retrait d'addons."""
     while True:
         items = exceptions.load()
-        if not items:
-            return
-        options = [_item(exceptions.addon_name(ex["id"]), summary(ex), _icon(ex["id"]))
-                   for ex in items]
+        options = [_item(L(32224), L(32225), _art("ajouter"))]
+        options += [_item(exceptions.addon_name(ex["id"]), summary(ex), method_icon(ex["method"]))
+                    for ex in items]
         sel = xbmcgui.Dialog().select(L(32250), options, useDetails=True)
         if sel < 0:
             return
-        _edit_one(items[sel]["id"])
+        if sel == 0:
+            manage()
+        else:
+            _edit_one(items[sel - 1]["id"])
 
 
 def _edit_one(addon_id):
@@ -169,17 +172,22 @@ def _edit_one(addon_id):
 
 
 def _choose_method(items, ex, name):
+    """Deux boutons explicites (plus une annulation) : Kodi ferme une liste
+    dès qu'on choisit une ligne, ce qui ressemblait à un choix sans validation."""
     delay = max(0, common.get_int("pause_delay", 5))
-    options = [_item(L(32230), L(32232) % name), _item(L(32231), L(32233) % (name, delay))]
-    pre = 1 if ex["method"] == exceptions.PAUSE else 0
-    sel = xbmcgui.Dialog().select(name, options, preselect=pre, useDetails=True)
-    if sel < 0:
-        return
-    method = exceptions.PAUSE if sel == 1 else exceptions.ROUTE
+    text = "[B]%s[/B] : %s[CR][CR][B]%s[/B] : %s[CR][CR]%s" % (
+        L(32230), L(32232) % name, L(32231), L(32233) % (name, delay),
+        L(32261) % method_label(ex["method"]))
+    res = xbmcgui.Dialog().yesnocustom(name, text, xbmc.getLocalizedString(222),
+                                       nolabel=L(32230), yeslabel=L(32231))
+    if res not in (0, 1):
+        return  # annulé
+    method = exceptions.PAUSE if res == 1 else exceptions.ROUTE
     if method != ex["method"]:
         ex["method"] = method
         exceptions.save(items)
         common.event("Exceptions : %s en %s" % (name, method_label(method).lower()))
+        common.notify("%s : %s" % (name, method_label(method)), icon=method_icon(method))
 
 
 def _host_label(h):

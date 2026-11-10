@@ -1,3 +1,14 @@
+v0.6.1
+- CORRECTIF route directe : rien n'etait jamais appris pour les addons sans
+  profil. Kodi donne l'adresse plugin:// de l'addon et non celle du flux :
+  ProtonVPN releve maintenant les connexions ouvertes depuis le debut de la
+  lecture (/proc/net/tcp) et les passe en direct des la lecture suivante.
+  L'adresse de chaque lecture est notee dans kodi.log pour le diagnostic.
+- Liste des exceptions : icone de la methode (fleche = route directe,
+  pause = pause du VPN), ligne « Ajouter ou retirer des addons » en tete.
+- Choix de la methode : deux boutons explicites (Route directe / Pause du
+  VPN) et Annuler, avec la description de chacune et la methode actuelle.
+
 v0.6.0
 - NOUVEAU : exceptions par addon (Parametres > Exceptions). Tu choisis les
   addons installes qui sortent par ta connexion normale, et pour chacun la

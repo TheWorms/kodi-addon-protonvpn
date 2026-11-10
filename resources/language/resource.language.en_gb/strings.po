@@ -650,3 +650,7 @@ msgstr ""
 msgctxt "#32260"
 msgid "%d server(s)"
 msgstr ""
+
+msgctxt "#32261"
+msgid "Current method: %s"
+msgstr ""

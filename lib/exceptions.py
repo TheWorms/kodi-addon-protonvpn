@@ -388,6 +388,49 @@ def learn(items, addon_id, host):
     return new
 
 
+_WEB_PORTS = (80, 443, 8080, 8443)
+
+
+def tcp_peers():
+    """Adresses publiques des connexions TCP établies vers un port web.
+    Kodi fait tourner tous les addons dans un seul processus : on lit la
+    table du système (/proc/net/tcp), en hexadécimal petit-boutiste."""
+    out = set()
+    try:
+        with open("/proc/net/tcp", "r") as fh:
+            lines = fh.read().splitlines()[1:]
+    except OSError:
+        return out
+    for line in lines:
+        parts = line.split()
+        if len(parts) < 4 or parts[3] != "01":       # 01 = ESTABLISHED
+            continue
+        try:
+            ip_hex, port_hex = parts[2].split(":")
+            if int(port_hex, 16) not in _WEB_PORTS:
+                continue
+            ip = socket.inet_ntoa(bytes.fromhex(ip_hex)[::-1])
+        except (ValueError, OSError):
+            continue
+        if _public(ip):
+            out.add(ip)
+    return out
+
+
+def learn_ips(items, addon_id, ips, limit=8):
+    """Note des adresses vues pendant une lecture (connexions ouvertes depuis
+    son lancement). Retourne les adresses nouvelles."""
+    ex = by_id(items, addon_id)
+    if not ex or ex["method"] != ROUTE or not ex["learn"] or announces(addon_id):
+        return []
+    new = uncovered(ex, sorted(ips))[:limit]
+    now = int(time.time())
+    for ip in new:
+        ex["learned"].append({"host": ip, "ips": [ip], "ts": now})
+    del ex["learned"][:-MAX_HOSTS]
+    return new
+
+
 def refresh(items):
     """Résout de nouveau les serveurs connus (rotation des CDN). Retourne
     {(addon_id, host): ips} pour ceux qui ont changé ; ne modifie rien."""
