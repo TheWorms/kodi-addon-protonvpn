@@ -48,6 +48,80 @@ def method_icon(method):
     return _art("pause" if method == exceptions.PAUSE else "route")
 
 
+def _addon_icon(addon_id):
+    try:
+        import xbmcaddon
+        return xbmcaddon.Addon(addon_id).getAddonInfo("icon") or "DefaultAddon.png"
+    except Exception:
+        return "DefaultAddon.png"
+
+
+_CLOSE_ACTIONS = (9, 10, 92, 216, 247, 257, 275, 61448, 61467)
+
+
+class _ListDialog(xbmcgui.WindowXMLDialog):
+    """Liste (icône à gauche, petite icône de méthode à droite) et deux
+    boutons. result : ('row', i), ('extra',), ('ok',) ou None (retour)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title, self.rows, self.extra, self.ok_label, self.empty = "", [], "", "", ""
+        self.focus_row = 0
+        self.result = None
+
+    def onInit(self):
+        self.getControl(1).setLabel(self.title)
+        self.getControl(300).setLabel(self.empty)
+        lst = self.getControl(100)
+        lst.reset()
+        for label, label2, thumb, micon in self.rows:
+            li = xbmcgui.ListItem(label, label2)
+            if thumb:
+                li.setArt({"thumb": thumb})
+            li.setProperty("method_icon", micon or "")
+            lst.addItem(li)
+        extra, ok = self.getControl(201), self.getControl(202)
+        ok.setLabel(self.ok_label)
+        if self.extra:
+            extra.setLabel(self.extra)
+        else:
+            extra.setVisible(False)
+            lst.controlDown(ok)
+            ok.controlLeft(ok)
+            ok.controlRight(ok)
+        if self.rows:
+            lst.selectItem(min(self.focus_row, len(self.rows) - 1))
+            self.setFocusId(100)
+        else:
+            self.setFocusId(201 if self.extra else 202)
+
+    def onClick(self, control_id):
+        if control_id == 100:
+            self.result = ("row", self.getControl(100).getSelectedPosition())
+        elif control_id == 201:
+            self.result = ("extra",)
+        elif control_id == 202:
+            self.result = ("ok",)
+        else:
+            return
+        self.close()
+
+    def onAction(self, action):
+        if action.getId() in _CLOSE_ACTIONS:
+            self.result = None
+            self.close()
+
+
+def _show(title, rows, ok_label, extra="", empty="", focus_row=0):
+    d = _ListDialog("script-protonvpn-list.xml", common.ADDON_PATH, "Default", "1080i")
+    d.title, d.rows, d.ok_label, d.extra, d.empty = title, rows, ok_label, extra, empty
+    d.focus_row = focus_row
+    d.doModal()
+    result = d.result
+    del d
+    return result
+
+
 def method_label(method):
     return L(32231) if method == exceptions.PAUSE else L(32230)
 
@@ -111,45 +185,49 @@ def manage():
 # --- Régler un addon de la liste ----------------------------------------------
 
 def edit():
-    """Liste des exceptions : icône de la méthode, nom de l'addon, détail.
-    La première ligne ouvre l'ajout / retrait d'addons."""
+    """Liste des exceptions, bouton « Ajouter ou retirer des addons » et
+    bouton « Valider »."""
+    focus = 0
     while True:
         items = exceptions.load()
-        options = [_item(L(32224), L(32225), _art("ajouter"))]
-        options += [_item(exceptions.addon_name(ex["id"]), summary(ex), method_icon(ex["method"]))
-                    for ex in items]
-        sel = xbmcgui.Dialog().select(L(32250), options, useDetails=True)
-        if sel < 0:
+        rows = [(exceptions.addon_name(ex["id"]), summary(ex), _addon_icon(ex["id"]),
+                 method_icon(ex["method"])) for ex in items]
+        res = _show(L(32250), rows, L(32262), extra=L(32224), empty=L(32263), focus_row=focus)
+        if not res or res[0] == "ok":
             return
-        if sel == 0:
+        if res[0] == "extra":
             manage()
         else:
-            _edit_one(items[sel - 1]["id"])
+            focus = res[1]
+            _edit_one(items[res[1]]["id"])
 
 
 def _edit_one(addon_id):
     name = exceptions.addon_name(addon_id)
+    focus = 0
     while True:
         items = exceptions.load()
         ex = exceptions.by_id(items, addon_id)
         if not ex:
             return
-        opts = [(L(32234) % method_label(ex["method"]), "method")]
+        opts = [(L(32234) % method_label(ex["method"]), "method", method_icon(ex["method"]))]
         if ex["method"] == exceptions.ROUTE:
             ranges = exceptions.profile_ranges(addon_id)
             if ranges:
-                opts.append((L(32235) % len(ranges), "profile"))
+                opts.append((L(32235) % len(ranges), "profile", ""))
             if exceptions.announces(addon_id):
-                opts.append((L(32252) % name, "announce"))
+                opts.append((L(32252) % name, "announce", ""))
             else:
-                opts.append((L(32236) % len(ex["learned"]), "learned"))
-                opts.append((L(32237) % _yes_no(ex["learn"]), "learn"))
-            opts.append((L(32238) % len(ex["manual"]), "manual"))
-        opts.append((L(32239), "remove"))
-        sel = xbmcgui.Dialog().select(name, [o[0] for o in opts])
-        if sel < 0:
+                opts.append((L(32236) % len(ex["learned"]), "learned", ""))
+                opts.append((L(32237) % _yes_no(ex["learn"]), "learn", ""))
+            opts.append((L(32238) % len(ex["manual"]), "manual", ""))
+        opts.append((L(32239), "remove", ""))
+        rows = [(o[0], "", "", o[2]) for o in opts]
+        res = _show(name, rows, L(32262), focus_row=focus)
+        if not res or res[0] == "ok":
             return
-        act = opts[sel][1]
+        focus = res[1]
+        act = opts[res[1]][1]
         if act == "method":
             _choose_method(items, ex, name)
         elif act == "profile":

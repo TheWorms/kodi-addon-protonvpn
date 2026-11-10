@@ -654,3 +654,11 @@ msgstr "%d serveur(s)"
 msgctxt "#32261"
 msgid "Current method: %s"
 msgstr "Méthode actuelle : %s"
+
+msgctxt "#32262"
+msgid "OK"
+msgstr "Valider"
+
+msgctxt "#32263"
+msgid "No add-on in the list. Choose “Add or remove add-ons” to add some."
+msgstr "Aucun addon dans la liste. Choisis « Ajouter ou retirer des addons » pour en ajouter."

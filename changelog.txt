@@ -1,3 +1,8 @@
+v0.6.2
+- Liste des exceptions dans une fenetre dediee : icone de l'addon a gauche,
+  petite icone de la methode a droite, boutons « Ajouter ou retirer des
+  addons » et « Valider ». Le menu d'un addon a aussi son bouton Valider.
+
 v0.6.1
 - CORRECTIF route directe : rien n'etait jamais appris pour les addons sans
   profil. Kodi donne l'adresse plugin:// de l'addon et non celle du flux :
