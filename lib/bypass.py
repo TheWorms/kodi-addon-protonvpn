@@ -1,46 +1,40 @@
 # -*- coding: utf-8 -*-
 #
-# ProtonVPN - YouTube hors du tunnel (routage direct)
+# ProtonVPN - route directe (hors tunnel) des exceptions
 #
-# YouTube freine fortement les adresses de VPN (HTTP 429, « confirm you're
-# not a bot »). Option : le trafic vers les plages d'adresses de Google /
-# YouTube sort par la connexion normale, le reste reste dans le tunnel.
+# Les addons de la liste des exceptions en « route directe » ont leurs
+# serveurs routés par la connexion normale ; le reste de Kodi reste dans le
+# tunnel. Les destinations viennent de lib/exceptions.py.
 #
 # Mécanisme (indépendant de WireGuard ou OpenVPN) :
 #   - table de routage dédiée TABLE, avec pour seule route la passerelle
 #     de la box (route par défaut de la table main) ;
-#   - une règle « ip rule » de priorité PREF par plage Google, avant les
+#   - une règle « ip rule » de priorité PREF par destination, avant les
 #     règles de wg-quick (32764/32765) et sans être concernée par les routes
 #     0/1 + 128/1 d'OpenVPN (elles sont dans la table main). Si le tunnel
 #     monte alors que nos règles existent déjà, wg-quick se place devant
 #     (1049/1048) : _reorder() le remet derrière, après chaque connexion et
 #     à chaque passage du service.
 #
-# Les serveurs vidéo de YouTube peuvent être hébergés chez le fournisseur
-# d'accès (caches Google « GGC ») hors de ces plages : l'addon YouTube
-# (Wtube) ajoute lui-même une règle /32 pour chaque serveur qu'il utilise,
-# dans la même table et à la même priorité, quand la propriété PROP est
-# publiée. Tout est retiré quand l'option est désactivée.
+# Addons qui annoncent leurs serveurs (Wtube) : la propriété PROP leur donne
+# le numéro de la table ; ils ajoutent eux-mêmes une règle /32 par serveur
+# vidéo, dans la même table et à la même priorité (caches Google hébergés
+# chez le fournisseur d'accès, hors des plages connues). Ces règles sont
+# gardées tant que l'addon est en route directe, purgées au-delà de
+# MAX_HOST_RULES, retirées sinon. PROP_ADDON + id est publié pour chaque
+# addon en route directe (même numéro de table), pour d'autres addons.
 
 import subprocess
 
 from lib import common
+from lib import exceptions
 
 TABLE = 1050
 PREF = 1050
-PROP = "protonvpn.bypass_table"   # propriété Home lue par Wtube
-MAX_HOST_RULES = 300              # règles /32 ajoutées par Wtube : purge au-delà
-
-# Plages IPv4 des services Google (dont youtube.com, googlevideo.com,
-# ytimg.com) d'après la liste publiée par Google (goog.json), sans les
-# plages Google Cloud des clients.
-GOOGLE_RANGES = (
-    "64.233.160.0/19", "66.102.0.0/20", "66.249.64.0/19", "72.14.192.0/18",
-    "74.125.0.0/16", "108.170.192.0/18", "108.177.0.0/17", "142.250.0.0/15",
-    "172.217.0.0/16", "172.253.0.0/16", "173.194.0.0/16", "192.178.0.0/15",
-    "207.223.160.0/20", "208.65.152.0/22", "208.117.224.0/19", "209.85.128.0/17",
-    "216.58.192.0/19", "216.239.32.0/19",
-)
+PROP = "protonvpn.bypass_table"     # lu par Wtube (inchangé depuis 0.5.13)
+PROP_ADDON = "protonvpn.bypass."    # + id de l'addon
+PROP_ADDONS = "protonvpn.bypass_addons"
+MAX_HOST_RULES = 300                # règles /32 posées par les addons : purge au-delà
 
 
 def _ip(args):
@@ -55,7 +49,7 @@ def _ip(args):
 
 
 def _rules():
-    """Destinations des règles de cette option : {'1.2.3.0/24', ...}."""
+    """Destinations des règles de la route directe : {'1.2.3.0/24', ...}."""
     rc, out = _ip(["rule", "show"])
     found = set()
     if rc != 0:
@@ -76,12 +70,12 @@ def _wg_rule(args):
 
 
 def _reorder():
-    """Remet les règles du tunnel WireGuard derrière celles de l'option.
+    """Remet les règles du tunnel WireGuard derrière celles de la route directe.
 
     wg-quick ajoute ses règles sans priorité : le noyau les place juste avant
     la première règle existante. Si nos règles (1050) existent déjà quand le
     tunnel monte (Kodi relancé, reconnexion), celles de wg-quick prennent
-    1049 et 1048, passent devant, et YouTube repart dans le tunnel. On les
+    1049 et 1048, passent devant, et tout repart dans le tunnel. On les
     replace dans l'ordre habituel de wg-quick, juste avant la table main
     (32764, 32765), en ajoutant la copie avant de retirer l'originale : le
     tunnel n'est jamais sans règle. Retourne le nombre de règles déplacées.
@@ -108,7 +102,7 @@ def _reorder():
         if placed and _ip(["rule", "del"] + args + ["pref", str(pref)])[0] == 0:
             moved += 1
     if moved:
-        common.log("bypass YouTube : %d regle(s) du tunnel replacee(s) apres les notres" % moved)
+        common.log("route directe : %d regle(s) du tunnel replacee(s) apres les notres" % moved)
     return moved
 
 
@@ -121,61 +115,83 @@ def _gateway():
         parts = line.split()
         if "via" in parts and "dev" in parts:
             dev = parts[parts.index("dev") + 1]
-            if dev.startswith(("wg", "tun", "proton")):
+            if dev.startswith(("wg", "tun", "proton", "pvpn")):
                 continue  # jamais vers le tunnel lui-même
             return parts[parts.index("via") + 1], dev
     return None
 
 
-def enable():
-    """Pose la table et les règles (idempotent). True si actif."""
+def _del(dest):
+    return _ip(["rule", "del", "to", dest, "lookup", str(TABLE), "pref", str(PREF)])[0] == 0
+
+
+def _publish(announce, routed):
+    common.set_prop(PROP, str(TABLE) if announce else "")
+    old = [a for a in common.get_prop(PROP_ADDONS).split(",") if a]
+    for addon_id in old:
+        if addon_id not in routed:
+            common.set_prop(PROP_ADDON + addon_id, "")
+    for addon_id in routed:
+        common.set_prop(PROP_ADDON + addon_id, str(TABLE))
+    common.set_prop(PROP_ADDONS, ",".join(routed))
+
+
+def _apply(dest, announce, routed):
+    """Pose la table et les règles voulues, retire les autres. True si actif."""
     gw = _gateway()
     if not gw:
-        common.log("bypass YouTube : passerelle introuvable, option inactive")
-        common.set_prop(PROP, "")
+        common.log("route directe : passerelle introuvable, exceptions inactives")
+        _publish(False, [])
         return False
     rc, out = _ip(["route", "replace", "default", "via", gw[0], "dev", gw[1], "table", str(TABLE)])
     if rc != 0:
-        common.log("bypass YouTube : table %d impossible (%s)" % (TABLE, out.strip()[:200]))
-        common.set_prop(PROP, "")
+        common.log("route directe : table %d impossible (%s)" % (TABLE, out.strip()[:200]))
+        _publish(False, [])
         return False
     existing = _rules()
-    added = 0
-    for cidr in GOOGLE_RANGES:
-        if cidr not in existing:
-            if _ip(["rule", "add", "to", cidr, "lookup", str(TABLE), "pref", str(PREF)])[0] == 0:
-                added += 1
-    # Les /32 ajoutées par Wtube s'accumulent au fil des vidéos : purge simple.
-    hosts = [d for d in existing if d.endswith("/32")]
+    added = removed = 0
+    for cidr in dest:
+        if cidr not in existing and \
+                _ip(["rule", "add", "to", cidr, "lookup", str(TABLE), "pref", str(PREF)])[0] == 0:
+            added += 1
+    extra = [d for d in existing if d not in dest]
+    # /32 posées par un addon qui annonce ses serveurs : gardées (purge simple
+    # au-delà de MAX_HOST_RULES) tant qu'il est en route directe.
+    hosts = [d for d in extra if d.endswith("/32")] if announce else []
     if len(hosts) > MAX_HOST_RULES:
-        for dest in hosts:
-            _ip(["rule", "del", "to", dest, "lookup", str(TABLE), "pref", str(PREF)])
+        hosts = []
+    for d in extra:
+        if d not in hosts and _del(d):
+            removed += 1
     _reorder()
-    if added or common.get_prop(PROP) != str(TABLE):
-        common.event("YouTube hors VPN : actif (via %s)" % gw[0])
-    common.set_prop(PROP, str(TABLE))
+    was = common.get_prop(PROP_ADDONS)
+    _publish(announce, routed)
+    if added or removed or was != ",".join(routed):
+        names = ", ".join(exceptions.addon_name(a) for a in routed)
+        common.event("Route directe : %s (%d regle(s), via %s)" % (names, len(dest), gw[0]))
     return True
 
 
-def disable():
-    """Retire toutes les règles et la table de cette option."""
-    removed = 0
-    for dest in _rules():
-        if _ip(["rule", "del", "to", dest, "lookup", str(TABLE), "pref", str(PREF)])[0] == 0:
-            removed += 1
+def _clear():
+    removed = sum(1 for d in _rules() if _del(d))
     _ip(["route", "flush", "table", str(TABLE)])
-    if removed or common.get_prop(PROP):
-        common.event("YouTube hors VPN : desactive")
-    common.set_prop(PROP, "")
+    if removed or common.get_prop(PROP) or common.get_prop(PROP_ADDONS):
+        common.event("Route directe : desactivee")
+    _publish(False, [])
 
 
-def sync():
-    """Applique le réglage ; appelé régulièrement par le service (suit aussi
-    un changement de passerelle de la box)."""
+def sync(items=None, skip_ips=()):
+    """Applique la liste des exceptions (items : liste déjà chargée, sinon
+    relue). Appelé régulièrement par le service : suit aussi un changement
+    de passerelle de la box."""
     try:
-        if common.get_bool("bypass_youtube", False):
-            enable()
-        elif common.get_prop(PROP) or _rules():
-            disable()
-    except Exception as exc:  # le service ne doit jamais tomber à cause de l'option
-        common.log("bypass YouTube : %s" % exc)
+        active = exceptions.active(items)
+        dest = exceptions.destinations(active, skip_ips)
+        routed = exceptions.route_ids(active)
+        announce = any(exceptions.announces(a) for a in routed)
+        if routed:
+            _apply(dest, announce, routed)
+        elif common.get_prop(PROP_ADDONS) or common.get_prop(PROP) or _rules():
+            _clear()
+    except Exception as exc:  # le service ne doit jamais tomber à cause des exceptions
+        common.log("route directe : %s" % exc)

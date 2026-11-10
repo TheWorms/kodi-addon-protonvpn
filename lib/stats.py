@@ -186,7 +186,8 @@ def publish_home_props(resolve_ip=True):
         return
     if not snap.get("connected"):
         setp("connected", "false")
-        setp("state", common.L(32202))   # Déconnecté
+        # Déconnecté, ou « En pause » pendant une exception « Pause du VPN »
+        setp("state", common.L(32257) if common.get_prop("protonvpn.paused") else common.L(32202))
         for k in ("backend", "server", "country", "ip", "iface",
                   "uptime", "rx", "tx", "rate", "flag"):
             setp(k, "")

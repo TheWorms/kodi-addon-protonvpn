@@ -81,10 +81,13 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <!-- Ancienne option « YouTube hors du VPN » (0.5.13 à 0.5.17) : cachée,
+             gardée pour être reprise une fois dans les exceptions (0.6.0). -->
         <setting id="bypass_youtube" type="boolean" label="32219" help="32220">
           <level>0</level>
           <default>false</default>
           <control type="toggle"/>
+          <visible>false</visible>
         </setting>
       </group>
     </category>
@@ -123,6 +126,43 @@
           <level>0</level>
           <data>RunPlugin(plugin://service.protonvpn.manager/?action=pickdelete)</data>
           <control type="button" format="action"><close>false</close></control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="exceptions" label="32221" help="">
+      <group id="1">
+        <setting id="exceptions_enabled" type="boolean" label="32222" help="32223">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="exceptions_manage" type="action" label="32224" help="32225">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=exmanage)</data>
+          <dependencies>
+            <dependency type="enable" setting="exceptions_enabled">true</dependency>
+          </dependencies>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+        <setting id="exceptions_edit" type="action" label="32226" help="32227">
+          <level>0</level>
+          <data>RunPlugin(plugin://service.protonvpn.manager/?action=exedit)</data>
+          <dependencies>
+            <dependency type="enable" setting="exceptions_enabled">true</dependency>
+          </dependencies>
+          <control type="button" format="action"><close>false</close></control>
+        </setting>
+      </group>
+      <group id="2">
+        <setting id="pause_delay" type="integer" label="32228" help="32229">
+          <level>0</level>
+          <default>5</default>
+          <constraints><minimum>0</minimum><step>1</step><maximum>60</maximum></constraints>
+          <dependencies>
+            <dependency type="enable" setting="exceptions_enabled">true</dependency>
+          </dependencies>
+          <control type="slider" format="integer"><popup>false</popup></control>
         </setting>
       </group>
     </category>

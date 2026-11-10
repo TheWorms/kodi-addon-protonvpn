@@ -611,6 +611,12 @@ def router(qs):
         do_manage_favorites()
     elif action == "pickautoconnect":
         do_pick_autoconnect()
+    elif action == "exmanage":
+        from lib import exceptions_ui
+        exceptions_ui.manage()
+    elif action == "exedit":
+        from lib import exceptions_ui
+        exceptions_ui.edit()
     elif action == "reconnect":
         do_reconnect()
     elif action == "status":

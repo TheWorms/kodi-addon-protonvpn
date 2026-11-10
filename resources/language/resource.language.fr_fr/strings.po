@@ -488,3 +488,165 @@ msgstr "YouTube hors du VPN (route directe)"
 msgctxt "#32220"
 msgid "YouTube and Google traffic leaves through your normal connection: YouTube no longer throttles the VPN address (HTTP 429). Everything else stays in the tunnel."
 msgstr "Le trafic YouTube et Google sort par ta connexion normale : YouTube ne freine plus l'adresse du VPN (HTTP 429). Tout le reste reste dans le tunnel."
+
+# Exceptions par addon (0.6.0)
+
+msgctxt "#32221"
+msgid "Exceptions"
+msgstr "Exceptions"
+
+msgctxt "#32222"
+msgid "Enable exceptions (traffic outside the VPN)"
+msgstr "Activer les exceptions (trafic hors VPN)"
+
+msgctxt "#32223"
+msgid "Add-ons in your list leave through your normal connection, with the method chosen for each one. Unchecked: all of Kodi goes through the VPN and the list is kept."
+msgstr "Les addons de ta liste sortent par ta connexion normale, selon la méthode choisie pour chacun. Décoché : tout Kodi passe par le VPN, la liste est gardée."
+
+msgctxt "#32224"
+msgid "Add or remove add-ons…"
+msgstr "Ajouter ou retirer des addons…"
+
+msgctxt "#32225"
+msgid "Tick, in the list of installed add-ons, those that must bypass the VPN. A new add-on starts with the direct route method."
+msgstr "Coche, dans la liste des addons installés, ceux qui doivent sortir sans VPN. Un addon ajouté démarre en route directe."
+
+msgctxt "#32226"
+msgid "Configure an add-on in the list…"
+msgstr "Régler un addon de la liste…"
+
+msgctxt "#32227"
+msgid "Method (direct route or VPN pause), learned servers, servers added by hand, removing the exception."
+msgstr "Méthode (route directe ou pause du VPN), serveurs appris, serveurs ajoutés à la main, retrait de l'exception."
+
+msgctxt "#32228"
+msgid "Delay before reconnecting after a pause (seconds)"
+msgstr "Délai avant de reconnecter après une pause (secondes)"
+
+msgctxt "#32229"
+msgid "For add-ons set to “VPN pause”: how long to wait after leaving the add-on before the tunnel comes back. Avoids reconnecting between two episodes."
+msgstr "Pour les addons en « Pause du VPN » : attente après la sortie de l'addon avant de relancer le tunnel. Évite de reconnecter entre deux épisodes."
+
+msgctxt "#32230"
+msgid "Direct route"
+msgstr "Route directe"
+
+msgctxt "#32231"
+msgid "VPN pause"
+msgstr "Pause du VPN"
+
+msgctxt "#32232"
+msgid "Only the servers of %s bypass the VPN. The rest of Kodi stays in the tunnel."
+msgstr "Seuls les serveurs de %s sortent sans VPN. Le reste de Kodi reste dans le tunnel."
+
+msgctxt "#32233"
+msgid "The VPN stops when you open %s or play one of its videos, and comes back %d s after you leave it. The whole box is without VPN meanwhile."
+msgstr "Le VPN s'arrête quand tu ouvres %s ou lis une de ses vidéos, et revient %d s après en être sorti. Toute la box est sans VPN pendant ce temps."
+
+msgctxt "#32234"
+msgid "Method: %s"
+msgstr "Méthode : %s"
+
+msgctxt "#32235"
+msgid "Built-in profile: Google ranges (%d)"
+msgstr "Profil intégré : plages Google (%d)"
+
+msgctxt "#32236"
+msgid "Learned servers: %d"
+msgstr "Serveurs appris : %d"
+
+msgctxt "#32237"
+msgid "Learn servers during playback: %s"
+msgstr "Apprendre les serveurs pendant la lecture : %s"
+
+msgctxt "#32238"
+msgid "Servers added by hand: %d"
+msgstr "Serveurs ajoutés à la main : %d"
+
+msgctxt "#32239"
+msgid "Remove this exception"
+msgstr "Retirer cette exception"
+
+msgctxt "#32240"
+msgid "Remove %s?"
+msgstr "Retirer %s ?"
+
+msgctxt "#32241"
+msgid "No installed add-on to add."
+msgstr "Aucun addon installé à ajouter."
+
+msgctxt "#32242"
+msgid "Add a server…"
+msgstr "Ajouter un serveur…"
+
+msgctxt "#32243"
+msgid "Server name, IP address or range"
+msgstr "Nom de serveur, adresse IP ou plage"
+
+msgctxt "#32244"
+msgid "%s cannot be found right now. Add it anyway? It will be looked up again later."
+msgstr "%s est introuvable pour l'instant. L'ajouter quand même ? Il sera recherché à nouveau plus tard."
+
+msgctxt "#32245"
+msgid "Enter a server name, an IP address or a range, for example live.example.com or 203.0.113.0/24."
+msgstr "Écris un nom de serveur, une adresse IP ou une plage, par exemple live.example.com ou 203.0.113.0/24."
+
+msgctxt "#32246"
+msgid "No learned server yet. Play a video from %s: its server is noted and goes direct from the next video on."
+msgstr "Aucun serveur appris pour l'instant. Lance une vidéo de %s : son serveur sera noté et passera en direct dès la vidéo suivante."
+
+msgctxt "#32247"
+msgid "Untick the servers to forget"
+msgstr "Décoche les serveurs à oublier"
+
+msgctxt "#32248"
+msgid "Remove %s from the exceptions? It will go through the VPN again."
+msgstr "Retirer %s des exceptions ? Il passera de nouveau par le VPN."
+
+msgctxt "#32249"
+msgid "No add-on in the exceptions list. Add some now?"
+msgstr "Aucun addon dans la liste des exceptions. En ajouter maintenant ?"
+
+msgctxt "#32250"
+msgid "Add-ons outside the VPN"
+msgstr "Addons hors VPN"
+
+msgctxt "#32251"
+msgid "Add-ons outside the VPN: %d"
+msgstr "Addons hors VPN : %d"
+
+msgctxt "#32252"
+msgid "Video servers: announced by %s"
+msgstr "Serveurs vidéo : annoncés par %s"
+
+msgctxt "#32253"
+msgid "%s announces its video servers itself before connecting to them: nothing to learn or add."
+msgstr "%s annonce lui-même ses serveurs vidéo avant de s'y connecter : rien à apprendre ni à ajouter."
+
+msgctxt "#32254"
+msgid "Google address ranges (youtube.com, googlevideo.com, ytimg.com) go direct for this add-on."
+msgstr "Les plages d'adresses de Google (youtube.com, googlevideo.com, ytimg.com) sortent en direct pour cet addon."
+
+msgctxt "#32255"
+msgid "VPN paused: %s"
+msgstr "VPN en pause : %s"
+
+msgctxt "#32256"
+msgid "VPN reconnected after the pause"
+msgstr "VPN reconnecté après la pause"
+
+msgctxt "#32257"
+msgid "Paused"
+msgstr "En pause"
+
+msgctxt "#32258"
+msgid "not installed"
+msgstr "non installé"
+
+msgctxt "#32259"
+msgid "Google ranges"
+msgstr "plages Google"
+
+msgctxt "#32260"
+msgid "%d server(s)"
+msgstr "%d serveur(s)"
