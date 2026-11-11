@@ -136,14 +136,38 @@ Duration, traffic and throughput update **live** while the tunnel is active.
 > update overwrites those changes** → just click "Install the ProtonVPN widget"
 > again after each Arctic Zephyr update.
 
+## Exceptions: pause the VPN for some add-ons
+
+Some services block or throttle VPN addresses (YouTube, catch-up TV…). You
+can pick add-ons that **pause the VPN**:
+
+- the tunnel stops as soon as you **open one of these add-ons** or **play one
+  of its videos** ("VPN paused" notification, "Paused" state on the widget);
+- it comes back on its own **a few seconds after** you leave it (adjustable
+  delay, 5 s by default, so it does not reconnect between two episodes);
+- if you start playback from another add-on during the pause, the VPN comes
+  back at once; a manual disconnect during the pause is respected.
+
+Setting: *Settings → Exceptions* → **Add or remove add-ons…** (checklist of
+installed add-ons).
+
+> During the pause, **the whole box is without VPN**, not only the chosen
+> add-on: Kodi runs all its add-ons in a single program, so the system cannot
+> separate their traffic.
+
+> Upgrading from 0.5.x: if the former "YouTube outside the VPN" option was
+> checked, Wtube is added to the exceptions automatically.
+
 ## Settings
 
-Organized into **Home / Servers / Widget / WireGuard / OpenVPN / Advanced**:
+Organized into **Home / Servers / Exceptions / Widget / WireGuard / OpenVPN / Advanced**:
 - **Home**: default protocol (WireGuard/OpenVPN, hides the other), quick connect,
   test, **auto-connect at startup** (random favorite *or* chosen server),
   auto-reconnect, disconnect on exit, header indicator.
 - **Servers**: manage favorite servers, connect to a WireGuard / OpenVPN server,
   import a server configuration, remove.
+- **Exceptions**: turn on the VPN pause for some add-ons, add or remove
+  add-ons, delay before reconnecting (see dedicated section).
 - **Widget**: install / remove the home widget (see dedicated section).
 - **WireGuard**: WireGuard import, `wg-quick` path.
 - **OpenVPN**: OpenVPN import, OpenVPN/IKEv2 credentials, UDP/TCP protocol,
@@ -168,6 +192,8 @@ Organized into **Home / Servers / Widget / WireGuard / OpenVPN / Advanced**:
 - WireGuard: NetShield/NAT options not editable from the add-on.
 - Home widget: **Arctic Zephyr only**; reinstall after a skin update (which
   overwrites the patched files).
+- Exceptions: the pause turns the VPN off for **the whole box** while the
+  add-on is in use; traffic is not split add-on by add-on.
 
 ---
 

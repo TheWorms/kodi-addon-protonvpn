@@ -128,15 +128,41 @@ le tunnel est actif.
 > **Une mise à jour du skin écrase ces modifications** → il suffit de recliquer
 > « Installer le widget ProtonVPN » après chaque mise à jour d'Arctic Zephyr.
 
+## Exceptions : pause du VPN pour certains addons
+
+Certains services refusent ou freinent les adresses de VPN (YouTube, chaînes
+de replay…). Tu peux choisir des addons qui **mettent le VPN en pause** :
+
+- le tunnel s'arrête dès que tu **ouvres un de ces addons** ou que tu **lis
+  une de ses vidéos** (notification « VPN en pause », état « En pause » sur
+  le widget) ;
+- il revient tout seul **quelques secondes après** que tu en es sorti (délai
+  réglable, 5 s par défaut, pour ne pas reconnecter entre deux épisodes) ;
+- si tu lances une lecture depuis un autre addon pendant la pause, le VPN
+  revient tout de suite ; une déconnexion manuelle pendant la pause est
+  respectée.
+
+Réglage : *Paramètres → Exceptions* → **Ajouter ou retirer des addons…**
+(liste à cocher des addons installés).
+
+> Pendant la pause, **toute la box est sans VPN**, pas seulement l'addon
+> choisi : Kodi fait tourner tous ses addons dans un seul programme, le système
+> ne peut pas séparer leur trafic.
+
+> Mise à jour depuis 0.5.x : si l'ancienne option « YouTube hors du VPN »
+> était cochée, Wtube est ajouté automatiquement aux exceptions.
+
 ## Réglages
 
-Organisés en **Accueil / Serveurs / Widget / WireGuard / OpenVPN / Avancé** :
+Organisés en **Accueil / Serveurs / Exceptions / Widget / WireGuard / OpenVPN / Avancé** :
 - **Accueil** : protocole par défaut (WireGuard/OpenVPN, masque l'autre),
   connexion rapide, test, **connexion auto au démarrage** (favori aléatoire
   *ou* serveur choisi), reconnexion auto, déconnexion à la fermeture,
   indicateur header.
 - **Serveurs** : gérer les serveurs favoris, se connecter à un serveur
   WireGuard / OpenVPN, importer une configuration serveur, supprimer.
+- **Exceptions** : activer la pause du VPN pour certains addons, ajouter ou
+  retirer des addons, délai avant de reconnecter (voir section dédiée).
 - **Widget** : installer / retirer le widget d'accueil (voir section dédiée).
 - **WireGuard** : import WireGuard, chemin `wg-quick`.
 - **OpenVPN** : import OpenVPN, identifiants OpenVPN/IKEv2, protocole UDP/TCP,
@@ -161,6 +187,8 @@ Organisés en **Accueil / Serveurs / Widget / WireGuard / OpenVPN / Avancé** :
 - WireGuard : options NetShield/NAT non modifiables depuis l'addon.
 - Widget d'accueil : **Arctic Zephyr uniquement** ; à réinstaller après une mise
   à jour du skin (qui écrase les fichiers patchés).
+- Exceptions : la pause coupe le VPN pour **toute la box**, le temps de
+  l'utilisation de l'addon ; pas de tri du trafic addon par addon.
 
 ---
 
