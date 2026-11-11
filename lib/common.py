@@ -156,7 +156,7 @@ def notify(message, heading=None, icon=None, time=4000):
     if heading is None:
         heading = ADDON_NAME
     if icon is None:
-        icon = os.path.join(ADDON_PATH, "resources", "icon.png")
+        icon = os.path.join(ADDON_PATH, "resources", "icon-addon.png")
     xbmcgui.Dialog().notification(heading, message, icon, time)
 
 

@@ -21,7 +21,7 @@ from lib import statswidget
 
 HANDLE = int(sys.argv[1])
 BASE = sys.argv[0]
-ICON = os.path.join(common.ADDON_PATH, "resources", "icon.png")
+ICON = os.path.join(common.ADDON_PATH, "resources", "icon-addon.png")
 
 
 

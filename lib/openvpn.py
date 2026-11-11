@@ -85,6 +85,10 @@ def _pid_alive(pid):
         return False
     try:
         os.kill(pid, 0)
+    except PermissionError:
+        # Le processus existe mais appartient a root (OpenVPN lance par sudo
+        # depuis un Kodi non root) : vivant, la ligne de commande tranche.
+        pass
     except OSError:
         return False
     confirmed = _proc_is_openvpn(pid)
@@ -97,6 +101,42 @@ def is_running():
 
 # --- Auth + config preparation --------------------------------------------
 
+def _write_private(path, text):
+    """Ecrit un fichier lisible par son seul proprietaire, des sa creation
+    (un chmod apres coup le laissait lisible par tous un court instant)."""
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
+def _signal(pid, sig):
+    """Envoie un signal a OpenVPN ; passe par sudo quand le processus
+    appartient a root et que l'option sudo est active."""
+    try:
+        os.kill(pid, sig)
+        return True
+    except PermissionError:
+        if not common.get_bool("use_sudo", False):
+            return False
+    except OSError:
+        return False
+    try:
+        proc = subprocess.run(["sudo", "-n", "kill", "-%d" % int(sig), str(pid)],
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL, timeout=10)
+        return proc.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def _write_auth():
     user = common.get_setting("vpn_username", "").strip()
     pwd = common.get_setting("vpn_password", "")
@@ -105,14 +145,11 @@ def _write_auth():
     suffix = _NETSHIELD.get(common.get_setting("netshield", "0"), "")
     if common.get_bool("moderate_nat", False):
         suffix += "+nr"
-    path = _auth_path()
-    with open(path, "w") as fh:
-        fh.write(user + suffix + "\n")
-        fh.write(pwd + "\n")
     try:
-        os.chmod(path, 0o600)
-    except OSError:
-        pass
+        _write_private(_auth_path(), user + suffix + "\n" + pwd + "\n")
+    except OSError as exc:
+        common.error("Cannot write the credentials file: %s" % exc)
+        return False
     return True
 
 
@@ -126,8 +163,11 @@ def _prepare_config(src_ovpn):
         return ""
     text = re.sub(r"^\s*auth-user-pass.*$", "", text, flags=re.MULTILINE)
     dst = _current_cfg_path()
-    with open(dst, "w") as fh:
-        fh.write(text)
+    try:
+        _write_private(dst, text)
+    except OSError as exc:
+        common.error("Cannot write the OpenVPN run config: %s" % exc)
+        return ""
     return dst
 
 
@@ -137,20 +177,13 @@ def disconnect(quiet=False):
     pid = _read_pid()
     killed = False
     if _pid_alive(pid):
-        try:
-            os.kill(pid, signal.SIGTERM)
-            killed = True
-        except OSError:
-            pass
+        killed = _signal(pid, signal.SIGTERM)
         for _ in range(10):
             if not _pid_alive(pid):
                 break
             time.sleep(0.3)
         if _pid_alive(pid):
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except OSError:
-                pass
+            _signal(pid, signal.SIGKILL)
     try:
         if os.path.exists(_pid_path()):
             os.remove(_pid_path())

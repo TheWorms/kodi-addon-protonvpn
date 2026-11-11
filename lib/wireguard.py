@@ -6,7 +6,6 @@
 # handshake means a dead tunnel even if the interface still exists).
 
 import os
-import re
 import time
 import subprocess
 
@@ -149,21 +148,31 @@ def is_running():
 
 # --- connect / disconnect --------------------------------------------------
 
+# Lignes que wg-quick execute en root ou qui lui font reecrire le fichier :
+# retirees des fichiers importes, ProtonVPN n'en fournit aucune.
+_HOOK_KEYS = ("preup", "postup", "predown", "postdown", "saveconfig")
+
+
 def _sanitize_conf(text):
     """Adapt a Proton WireGuard config for minimal kernels (CoreELEC):
     - drop IPv6 from AllowedIPs/Address so wg-quick never touches ip6tables
       (many embedded kernels lack the ip6tables 'raw' table);
     - drop the DNS line when no resolvconf-like tool is available, otherwise
-      wg-quick aborts the whole bring-up.
+      wg-quick aborts the whole bring-up;
+    - drop PreUp/PostUp/PreDown/PostDown/SaveConfig: wg-quick would run them
+      as root.
 
     Returns (sanitised_text, dropped) where ``dropped`` tells which lines were
     removed, so the caller can warn the user instead of failing silently.
     """
     keep_dns = _has_resolvconf()
-    dropped = {"dns": False, "ipv6": False}
+    dropped = {"dns": False, "ipv6": False, "hooks": False}
     out = []
     for line in text.splitlines():
         low = line.strip().lower()
+        if low.split("=", 1)[0].strip() in _HOOK_KEYS:
+            dropped["hooks"] = True
+            continue
         if low.startswith("dns") and not keep_dns:
             dropped["dns"] = True
             continue
@@ -197,7 +206,13 @@ def _prepare_runconf(src, iface):
     text, dropped = _sanitize_conf(text)
     dst = os.path.join(configs.run_dir(), iface + ".conf")
     try:
-        with open(dst, "w", encoding="utf-8") as fh:
+        # Cree directement en 600 : le fichier contient la cle privee.
+        try:
+            os.remove(dst)
+        except OSError:
+            pass
+        fd = os.open(dst, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(text)
         os.chmod(dst, 0o600)
     except OSError as exc:
@@ -208,6 +223,8 @@ def _prepare_runconf(src, iface):
         common.event("config WG : DNS retiree (pas de resolvconf sur ce systeme)")
     if dropped.get("ipv6"):
         common.event("config WG : IPv6 retiree (kernel sans ip6tables)")
+    if dropped.get("hooks"):
+        common.event("config WG : lignes PreUp/PostUp/PreDown/PostDown retirees")
     return dst
 
 
