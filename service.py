@@ -34,6 +34,7 @@ class ProtonService(xbmc.Monitor):
     _BROWSE_MEMORY = 10     # secondes : addon parcouru juste avant une lecture
     _PEERS_BEFORE = 4       # secondes : connexions « d'avant la lecture »
     _PEERS_AFTER = 8        # secondes de lecture avant de relever ses connexions
+    _PEERS_AGAIN = 20       # secondes entre deux relevés pendant la lecture
 
     def __init__(self):
         super().__init__()
@@ -51,6 +52,7 @@ class ProtonService(xbmc.Monitor):
         self.peers_hist = []     # [(instant, connexions)] hors lecture, 15 s
         self.peers_before = None # connexions d'avant la lecture en cours
         self.play_start = 0.0
+        self.peers_next = 0.0
         self.resume_at = 0.0     # fin du délai avant de relancer le tunnel
         self.last_refresh = time.time()
         self.refresher = None
@@ -158,6 +160,7 @@ class ProtonService(xbmc.Monitor):
             self.play_addon = addon or recent
             self.play_host = ""
             self.play_start = now
+            self.peers_next = now + self._PEERS_AFTER
             old = [p for ts, p in self.peers_hist if ts <= now - self._PEERS_BEFORE]
             self.peers_before = old[-1] if old else (self.peers_hist[0][1] if self.peers_hist else None)
             if self.play_addon in route_ids:
@@ -173,11 +176,13 @@ class ProtonService(xbmc.Monitor):
                 self.play_host = host or "-"
                 if host:
                     self._learn(self.play_addon, host=host)
-            if self.peers_before is not None and now - self.play_start >= self._PEERS_AFTER:
+            if self.peers_before is not None and now >= self.peers_next:
                 # Kodi donne souvent plugin://... au lieu de l'adresse du flux :
-                # on retient les connexions ouvertes depuis le début de la lecture.
+                # on retient les connexions ouvertes depuis le début de la
+                # lecture, de nouveau toutes les _PEERS_AGAIN secondes (les
+                # serveurs vidéo changent en cours de lecture).
                 self._learn(self.play_addon, ips=exceptions.tcp_peers() - self.peers_before)
-                self.peers_before = None
+                self.peers_next = now + self._PEERS_AGAIN
         if self.had_media and not has_media:
             # Fin de lecture : les adresses apprises passent en direct.
             self.play_addon = self.play_host = ""

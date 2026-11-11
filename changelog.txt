@@ -1,3 +1,11 @@
+v0.6.3
+- Retour aux fenetres standard de Kodi pour les exceptions (la fenetre
+  dediee de la 0.6.2 est retiree) ; ligne « Valider » en bas de la liste
+  des exceptions et du menu d'un addon.
+- Route directe : les connexions de la lecture sont relevees toutes les
+  20 s (et non plus une seule fois), pour apprendre les serveurs video qui
+  changent en cours de lecture.
+
 v0.6.2
 - Liste des exceptions dans une fenetre dediee : icone de l'addon a gauche,
   petite icone de la methode a droite, boutons « Ajouter ou retirer des
