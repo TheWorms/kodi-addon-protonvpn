@@ -145,14 +145,6 @@
           </dependencies>
           <control type="button" format="action"><close>false</close></control>
         </setting>
-        <setting id="exceptions_edit" type="action" label="32226" help="32227">
-          <level>0</level>
-          <data>RunPlugin(plugin://service.protonvpn.manager/?action=exedit)</data>
-          <dependencies>
-            <dependency type="enable" setting="exceptions_enabled">true</dependency>
-          </dependencies>
-          <control type="button" format="action"><close>false</close></control>
-        </setting>
       </group>
       <group id="2">
         <setting id="pause_delay" type="integer" label="32228" help="32229">

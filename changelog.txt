@@ -1,3 +1,16 @@
+v0.6.4
+- Exceptions : seule la pause du VPN est gardee. La route directe (et
+  l'apprentissage des serveurs) est retiree : elle ne fonctionnait pas de
+  facon fiable avec les sites qui changent de serveur en cours de video.
+  Le VPN s'arrete quand tu ouvres un addon de la liste ou lis une de ses
+  videos, et revient apres le delai regle.
+- Parametres > Exceptions : « Mettre le VPN en pause pour certains
+  addons », « Ajouter ou retirer des addons… », delai avant de reconnecter.
+- Au demarrage, les regles de route directe laissees par les versions
+  0.5.13 a 0.6.3 sont effacees.
+- Mise a jour depuis 0.5.x : si « YouTube hors du VPN » etait coche, Wtube
+  est ajoute aux exceptions (il met donc le VPN en pause).
+
 v0.6.3
 - Retour aux fenetres standard de Kodi pour les exceptions (la fenetre
   dediee de la 0.6.2 est retiree) ; ligne « Valider » en bas de la liste

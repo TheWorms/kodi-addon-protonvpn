@@ -3,11 +3,9 @@
 # ProtonVPN
 # Background service: optional auto-connect at boot, reconnect on drop,
 # keep window-property state up to date, optional disconnect on shutdown,
-# exceptions par addon (route directe, pause du VPN).
+# exceptions par addon (pause du VPN).
 
-import copy
 import os
-import threading
 import time
 
 import xbmc
@@ -28,89 +26,34 @@ class ProtonService(xbmc.Monitor):
     _BACKOFF = [5, 15, 30, 60]
     _MAX_FAILS = 5
 
-    _BYPASS_EVERY = 60      # secondes : route directe réappliquée (passerelle, wg-quick)
-    _ITEMS_EVERY = 30       # secondes : liste des exceptions relue au plus tard
-    _REFRESH_EVERY = 900    # secondes : serveurs connus résolus de nouveau (CDN)
-    _BROWSE_MEMORY = 10     # secondes : addon parcouru juste avant une lecture
-    _PEERS_BEFORE = 4       # secondes : connexions « d'avant la lecture »
-    _PEERS_AFTER = 8        # secondes de lecture avant de relever ses connexions
-    _PEERS_AGAIN = 20       # secondes entre deux relevés pendant la lecture
-
     def __init__(self):
         super().__init__()
         self.expected = False  # do we want a connection to be up?
-        self.last_bypass = 0.0
-        # Exceptions par addon
+        # Exceptions (pause du VPN)
         self.items = []
         self.items_rev = None
         self.items_ts = 0.0
-        self.pending = set()     # adresses apprises pendant la lecture en cours
         self.had_media = False
         self.play_addon = ""     # addon de la lecture en cours
-        self.play_host = ""      # serveur déjà examiné pour cette lecture
         self.last_browse = ("", 0.0)
-        self.peers_hist = []     # [(instant, connexions)] hors lecture, 15 s
-        self.peers_before = None # connexions d'avant la lecture en cours
-        self.play_start = 0.0
-        self.peers_next = 0.0
         self.resume_at = 0.0     # fin du délai avant de relancer le tunnel
-        self.last_refresh = time.time()
-        self.refresher = None
+
+    _ITEMS_EVERY = 30       # secondes : liste des exceptions relue au plus tard
+    _BROWSE_MEMORY = 10     # secondes : addon parcouru juste avant une lecture
 
     def onSettingsChanged(self):
-        # Exceptions activées ou désactivées : effet immédiat
         self._reload(force=True)
-        self._bypass()
 
-    # --- exceptions par addon -----------------------------------------------
+    # --- exceptions : pause du VPN ------------------------------------------
 
     def _reload(self, force=False):
-        """Relit la liste quand elle a changé. True si relue."""
         rev = exceptions.rev()
         if not force and rev == self.items_rev and \
                 time.time() - self.items_ts < self._ITEMS_EVERY:
-            return False
+            return
         self.items = exceptions.load()
         self.items_rev = rev
         self.items_ts = time.time()
-        return True
-
-    def _bypass(self):
-        bypass.sync(self.items, self.pending)
-        self.last_bypass = time.time()
-
-    def _refresh_async(self):
-        """Résout de nouveau les serveurs appris ou ajoutés, dans un fil à
-        part (un DNS lent ne doit pas figer la boucle)."""
-        self.last_refresh = time.time()
-        if self.refresher is not None and self.refresher.is_alive():
-            return
-        snapshot = copy.deepcopy(exceptions.active(self.items))
-        if not any(ex["learned"] or ex["manual"] for ex in snapshot):
-            return
-
-        def work():
-            try:
-                exceptions.apply_refresh(exceptions.refresh(snapshot))
-            except Exception as exc:
-                common.log("exceptions : nouvelle resolution impossible (%s)" % exc)
-
-        self.refresher = threading.Thread(target=work, daemon=True)
-        self.refresher.start()
-
-    def _learn(self, addon_id, host=None, ips=None):
-        if host:
-            new = exceptions.learn(self.items, addon_id, host)
-            what = host
-        else:
-            new = exceptions.learn_ips(self.items, addon_id, ips or ())
-            what = ", ".join(new)
-        if not new:
-            return
-        self.pending.update(new)
-        exceptions.save(self.items, bump=False)
-        common.event("Exceptions : %s appris pour %s, en direct des la prochaine lecture"
-                     % (what, exceptions.addon_name(addon_id)))
 
     def _pause(self, addon_id):
         name = exceptions.addon_name(addon_id)
@@ -143,63 +86,29 @@ class ProtonService(xbmc.Monitor):
             common.notify(common.L(32256))
 
     def _exceptions_tick(self, running):
-        if self._reload():
-            self._bypass()
-        active = exceptions.active(self.items)
+        self._reload()
+        ids = exceptions.active_ids(self.items)
         now = time.time()
 
         browse = exceptions.browsing()
         if browse:
             self.last_browse = (browse, now)
-        addon, url = exceptions.playing()
+        addon = exceptions.playing()
         has_media = addon is not None
-        route_ids = exceptions.route_ids(active)
         if has_media and not self.had_media:
             # Début de lecture : addon d'origine, à défaut celui qu'on parcourait.
             recent = self.last_browse[0] if now - self.last_browse[1] < self._BROWSE_MEMORY else ""
             self.play_addon = addon or recent
-            self.play_host = ""
-            self.play_start = now
-            self.peers_next = now + self._PEERS_AFTER
-            old = [p for ts, p in self.peers_hist if ts <= now - self._PEERS_BEFORE]
-            self.peers_before = old[-1] if old else (self.peers_hist[0][1] if self.peers_hist else None)
-            if self.play_addon in route_ids:
-                common.log("exceptions : lecture de %s (flux : %s)"
-                           % (self.play_addon, url or "adresse non communiquee par Kodi"))
-        if not has_media and running and route_ids:
-            # Connexions hors lecture : point de comparaison pour la suivante.
-            self.peers_hist.append((now, exceptions.tcp_peers()))
-            self.peers_hist = [h for h in self.peers_hist if now - h[0] <= 15]
-        if has_media and self.play_addon in route_ids and running:
-            if url and not self.play_host:
-                host = exceptions.stream_host(url)
-                self.play_host = host or "-"
-                if host:
-                    self._learn(self.play_addon, host=host)
-            if self.peers_before is not None and now >= self.peers_next:
-                # Kodi donne souvent plugin://... au lieu de l'adresse du flux :
-                # on retient les connexions ouvertes depuis le début de la
-                # lecture, de nouveau toutes les _PEERS_AGAIN secondes (les
-                # serveurs vidéo changent en cours de lecture).
-                self._learn(self.play_addon, ips=exceptions.tcp_peers() - self.peers_before)
-                self.peers_next = now + self._PEERS_AGAIN
-        if self.had_media and not has_media:
-            # Fin de lecture : les adresses apprises passent en direct.
-            self.play_addon = self.play_host = ""
-            self.peers_before = None
-            if self.pending:
-                self.pending.clear()
-                self._bypass()
+        if not has_media:
+            self.play_addon = ""
         self.had_media = has_media
 
-        # Pause du VPN
         paused = common.get_prop(exceptions.PROP_PAUSED)
         if paused and (running or common.get_prop("protonvpn.desired") == "off"):
             self._clear_pause()  # connexion ou déconnexion manuelle pendant la pause
             paused = ""
-        pause_ids = exceptions.pause_ids(active)
-        trigger = browse if browse in pause_ids else ""
-        if not trigger and has_media and self.play_addon in pause_ids:
+        trigger = browse if browse in ids else ""
+        if not trigger and has_media and self.play_addon in ids:
             trigger = self.play_addon
         if trigger:
             self.resume_at = 0.0
@@ -209,7 +118,7 @@ class ProtonService(xbmc.Monitor):
         if not paused:
             return
         if has_media:
-            self._resume("lecture hors pause")  # autre addon, fichier local...
+            self._resume("lecture hors exceptions")  # autre addon, fichier local...
             return
         if not self.resume_at:
             self.resume_at = now + max(0, common.get_int("pause_delay", 5))
@@ -299,7 +208,7 @@ class ProtonService(xbmc.Monitor):
         fails = 0
         disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
         last_monitor = 0.0
-        self._bypass()
+        bypass.cleanup()  # route directe des versions 0.5.13 à 0.6.3
         while not self.abortRequested():
             # Tick every second while connected (or paused by an exception) so
             # the widget's Durée/Trafic update live and the end of a pause is
@@ -315,11 +224,6 @@ class ProtonService(xbmc.Monitor):
             except Exception as exc:  # jamais bloquant pour le service
                 common.log("exceptions : %s" % exc)
             running = vpn.is_running()
-            # Suit aussi un changement de passerelle de la box (DHCP).
-            if time.time() - self.last_bypass >= self._BYPASS_EVERY:
-                self._bypass()
-            if time.time() - self.last_refresh >= self._REFRESH_EVERY:
-                self._refresh_async()
             # Les ticks a 1 Hz ne font que de l'affichage : resolution de
             # l'IP externe (appels HTTPS) uniquement a la cadence monitor,
             # pour ne jamais bloquer la machine a etats sur du reseau.

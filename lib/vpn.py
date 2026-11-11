@@ -84,10 +84,6 @@ def _connect_locked(config, quiet=False):
         common.set_since(time.time())
         common.set_header("VPN \u00b7 %s" % (cfg.get("country") or cfg.get("label") or ""))
         common.event("connecte %s (%s)" % (cfg.get("label", ""), backend))
-        # Exceptions en route directe : wg-quick vient de poser ses règles,
-        # parfois devant les nôtres ; remise en ordre sans attendre le service.
-        from lib import bypass
-        bypass.sync()
     return ok
 
 
