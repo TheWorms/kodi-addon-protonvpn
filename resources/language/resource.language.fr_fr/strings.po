@@ -558,3 +558,7 @@ msgstr "Le tunnel ne transporte que l'IPv4. Sur une machine qui a aussi de l'IPv
 msgctxt "#32261"
 msgid "IPv6 is active and could not be blocked: it bypasses the VPN"
 msgstr "IPv6 active et non bloquée : elle passe hors du VPN"
+
+msgctxt "#32262"
+msgid "This skin already includes the ProtonVPN widget: nothing to install or remove. To hide it, remove it from the home screen widgets."
+msgstr "Ce skin intègre déjà le widget ProtonVPN : rien à installer ni à retirer. Pour le masquer, retirez-le des widgets de l'accueil."

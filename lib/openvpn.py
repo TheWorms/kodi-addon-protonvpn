@@ -153,6 +153,82 @@ def _write_auth():
     return True
 
 
+# 0.6.7 (audit du 12/11/2026) : un fichier .ovpn peut faire executer des
+# commandes a OpenVPN (up, down, plugin...), en root si sudo est actif.
+# ProtonVPN ne s'en sert que pour le DNS (update-resolv-conf) : ces scripts-la
+# sont gardes, tous les autres retires de la copie lancee. Meme principe que
+# PreUp/PostUp pour WireGuard.
+_SCRIPT_DIRECTIVES = frozenset((
+    "up", "down", "route-up", "route-pre-down", "ipchange", "client-connect",
+    "client-disconnect", "learn-address", "auth-user-pass-verify", "tls-verify",
+    "plugin", "config",
+))
+_ALLOWED_SCRIPTS = frozenset(("update-resolv-conf", "update-systemd-resolved"))
+# dossiers systeme, ecrits par root seulement : un script du meme nom pose
+# ailleurs (dossier de l'utilisateur, /tmp) n'est pas accepte
+_ALLOWED_DIRS = frozenset(("/etc/openvpn", "/etc/openvpn/scripts", "/usr/share/openvpn",
+                           "/usr/lib/openvpn", "/usr/libexec/openvpn"))
+
+
+def _script_allowed(args):
+    """La directive up/down appelle-t-elle le script DNS d'un dossier systeme ?"""
+    arg = args.strip()
+    if arg[:1] in ("'", '"'):
+        arg = arg[1:].split(arg[0], 1)[0]
+    words = arg.split()
+    if len(words) != 1:
+        return False  # arguments ou commande composee : refuse
+    path = os.path.normpath(words[0])
+    return (os.path.basename(path) in _ALLOWED_SCRIPTS
+            and os.path.dirname(path) in _ALLOWED_DIRS)
+
+
+def sanitize_config(text):
+    """Copie du fichier sans les directives qui executent du code, sauf les
+    scripts DNS de ProtonVPN. Retourne (texte, directives retirees)."""
+    out, removed = [], []
+    kept_script = False
+    inline = None
+    security = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if inline:
+            out.append(line)
+            if stripped.lower() == "</%s>" % inline:
+                inline = None
+            continue
+        m = re.match(r"^<([a-z0-9-]+)>$", stripped.lower())
+        if m:
+            inline = m.group(1)
+            out.append(line)
+            continue
+        if not stripped or stripped[0] in "#;":
+            out.append(line)
+            continue
+        parts = stripped.split(None, 1)
+        directive = parts[0].lower().lstrip("-")
+        args = parts[1] if len(parts) > 1 else ""
+        if directive == "auth-user-pass":
+            continue  # remplace par le fichier d'identifiants de l'addon
+        if directive == "script-security":
+            security = len(out)
+            out.append(line)
+            continue
+        if directive in _SCRIPT_DIRECTIVES:
+            if directive in ("up", "down") and _script_allowed(args):
+                kept_script = True
+                out.append(line)
+            else:
+                removed.append(stripped)
+            continue
+        out.append(line)
+    if security is not None:
+        # niveau 2 au plus (jamais 3 : mots de passe passes aux scripts), et
+        # 1 s'il ne reste aucun script autorise
+        out[security] = "script-security %d" % (2 if kept_script else 1)
+    return "\n".join(out) + "\n", removed
+
+
 def _prepare_config(src_ovpn):
     src = xbmcvfs.translatePath(src_ovpn)
     try:
@@ -161,7 +237,10 @@ def _prepare_config(src_ovpn):
     except OSError as exc:
         common.error("Cannot read config %s: %s" % (src, exc))
         return ""
-    text = re.sub(r"^\s*auth-user-pass.*$", "", text, flags=re.MULTILINE)
+    text, removed = sanitize_config(text)
+    for directive in removed:
+        common.event("OpenVPN : directive retiree du fichier (execution de commande) : %s"
+                     % directive[:80])
     dst = _current_cfg_path()
     try:
         _write_private(dst, text)

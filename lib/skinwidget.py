@@ -8,7 +8,8 @@
 #   shortcuts/template.xml  : <other include="ProtonVPNInfoContent">
 #   1080i/Includes.xml      : the ProtonVPNInfoItems <item> list
 # Also cleans up the 0.5.0 home-overlay (Home.xml call + ProtonVPNHomePanel).
-# remove() reverts everything. Only Arctic Zephyr is supported.
+# remove() reverts everything. Arctic Zephyr and its fork Arctic: Worms only;
+# a skin that already ships the widget is left untouched (is_native).
 
 import os
 import shutil
@@ -45,7 +46,21 @@ def _skin_id():
 
 
 def is_supported():
-    return _skin_id().startswith("skin.arctic.zephyr")
+    # 0.6.7 : Arctic: Worms, fork d'Arctic Zephyr Reloaded, compte aussi
+    return _skin_id().startswith(("skin.arctic.zephyr", "skin.arctic.worms"))
+
+
+def is_native():
+    """0.6.7 : le skin livre deja le widget (Arctic Zephyr 3.0.5+, Arctic:
+    Worms) : marqueurs presents sans sauvegarde .pvpnbak de l'addon. Il ne faut
+    alors ni l'installer ni le retirer : une mise a jour du skin le remettrait."""
+    overrides = os.path.join(_base(), "shortcuts", "overrides.xml")
+    try:
+        with open(overrides, "r", encoding="utf-8", errors="ignore") as fh:
+            native = _BEGIN in fh.read()
+    except OSError:
+        return False
+    return native and not os.path.exists(overrides + ".pvpnbak")
 
 
 def _base():
@@ -162,6 +177,9 @@ def install():
     if not is_supported():
         common.ok(common.L(32205))
         return False
+    if is_native():
+        common.ok(common.L(32262))
+        return True
     res = _res_dir()
     sc = os.path.join(_base(), "shortcuts")
     includes = os.path.join(res, "Includes.xml")
@@ -218,6 +236,9 @@ def install():
 
 
 def remove():
+    if is_supported() and is_native():
+        common.ok(common.L(32262))
+        return False
     res = _res_dir()
     sc = os.path.join(_base(), "shortcuts")
     for p in (os.path.join(res, "Includes.xml"),
