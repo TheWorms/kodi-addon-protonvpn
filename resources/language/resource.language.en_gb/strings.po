@@ -298,7 +298,7 @@ msgid "Delete"
 msgstr ""
 
 msgctxt "#32169"
-msgid "Delete configuration "%s"?"
+msgid "Delete configuration \"%s\"?"
 msgstr ""
 
 msgctxt "#32170"
@@ -547,3 +547,14 @@ msgctxt "#32258"
 msgid "not installed"
 msgstr ""
 
+msgctxt "#32259"
+msgid "Block IPv6 while the VPN is connected"
+msgstr ""
+
+msgctxt "#32260"
+msgid "The tunnel only carries IPv4. On a machine that also has IPv6, that traffic would go out directly, outside the VPN, with your real address. While connected, public IPv6 is made unreachable so applications fall back to IPv4 through the tunnel. The local network is not affected and nothing changes on a machine without IPv6."
+msgstr ""
+
+msgctxt "#32261"
+msgid "IPv6 is active and could not be blocked: it bypasses the VPN"
+msgstr ""

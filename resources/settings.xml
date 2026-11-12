@@ -272,6 +272,11 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="block_ipv6" type="boolean" label="32259" help="32260">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="use_api" type="boolean" label="32129">
           <level>1</level>
           <default>false</default>

@@ -13,6 +13,7 @@ import xbmc
 from lib import bypass
 from lib import common
 from lib import exceptions
+from lib import ipv6guard
 from lib import vpn
 from lib import configs
 from lib import stats
@@ -204,6 +205,9 @@ class ProtonService(xbmc.Monitor):
         if vpn.is_running():
             self.expected = True
             common.set_phase(common.PHASE_CONNECTED)
+        # Blocage IPv6 aligne sur l'etat reel du tunnel (Kodi arrete sans
+        # deconnexion, tunnel WireGuard reste monte d'une session a l'autre).
+        ipv6guard.sync(vpn.is_running())
 
         fails = 0
         disconnect_on_exit = common.get_bool("disconnect_on_exit", False)
@@ -252,6 +256,7 @@ class ProtonService(xbmc.Monitor):
                     self.expected = False
                     common.set_state(False)
                     common.set_phase(common.PHASE_DISCONNECTED)
+                    ipv6guard.sync(False)
                     continue
 
                 if fails == 0:
@@ -272,6 +277,7 @@ class ProtonService(xbmc.Monitor):
                         common.set_phase(common.PHASE_ERROR)
                         common.set_header("")
                         common.notify(common.L(32074))
+                        ipv6guard.sync(False)
                         fails = 0
                     else:
                         # Back off (abort-aware) before the next attempt.
@@ -287,6 +293,7 @@ class ProtonService(xbmc.Monitor):
                 if not common.get_state()["connected"]:
                     common.set_state(True, server=common.get_state().get("server", ""))
                 common.set_phase(common.PHASE_CONNECTED)
+                ipv6guard.sync(True)
 
         # Kodi is shutting down: use the value cached during the loop so we don't
         # touch the add-on API while it is being torn down.

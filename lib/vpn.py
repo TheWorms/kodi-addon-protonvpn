@@ -14,6 +14,7 @@ import xbmcvfs
 
 from lib import common
 from lib import configs
+from lib import ipv6guard
 from lib import openvpn
 from lib import wireguard
 
@@ -84,6 +85,12 @@ def _connect_locked(config, quiet=False):
         common.set_since(time.time())
         common.set_header("VPN \u00b7 %s" % (cfg.get("country") or cfg.get("label") or ""))
         common.event("connecte %s (%s)" % (cfg.get("label", ""), backend))
+        try:
+            # Le tunnel ne transporte que l'IPv4 : sans cela, l'IPv6 de la
+            # machine sortirait hors du VPN.
+            ipv6guard.enable(cfg["path"])
+        except Exception as exc:   # ne doit jamais faire echouer la connexion
+            common.log("ipv6guard : %s" % exc)
     return ok
 
 
@@ -103,6 +110,7 @@ def disconnect(quiet=False, pause=False):
     common.set_since(0)
     common.set_header("")
     common.event("en pause" if pause else "deconnecte")
+    ipv6guard.sync(False)
     return True
 
 
