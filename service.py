@@ -55,6 +55,8 @@ class ProtonService(xbmc.Monitor):
         self.items = exceptions.load()
         self.items_rev = rev
         self.items_ts = time.time()
+        # v0.6.8 : lu par les addons en exception avant de demander la pause
+        common.set_prop(exceptions.PROP_IDS, ",".join(exceptions.active_ids(self.items)))
 
     def _pause(self, addon_id):
         name = exceptions.addon_name(addon_id)
@@ -67,10 +69,12 @@ class ProtonService(xbmc.Monitor):
         common.set_phase(common.PHASE_DISCONNECTED)
         common.event("Pause du VPN : %s" % name)
         common.notify(common.L(32255) % name)
+        common.set_prop(exceptions.PROP_READY, addon_id)  # tunnel coupé
 
     def _clear_pause(self):
         common.set_prop(exceptions.PROP_PAUSED, "")
         common.set_prop(exceptions.PROP_PAUSED_CFG, "")
+        common.set_prop(exceptions.PROP_READY, "")
         self.resume_at = 0.0
 
     def _resume(self, reason):
@@ -109,6 +113,10 @@ class ProtonService(xbmc.Monitor):
             self._clear_pause()  # connexion ou déconnexion manuelle pendant la pause
             paused = ""
         trigger = browse if browse in ids else ""
+        if not trigger:
+            asked = exceptions.requested(now)  # v0.6.8 : avant la lecture
+            if asked in ids:
+                trigger = asked
         if not trigger and has_media and self.play_addon in ids:
             trigger = self.play_addon
         if trigger:
@@ -294,6 +302,10 @@ class ProtonService(xbmc.Monitor):
                     common.set_state(True, server=common.get_state().get("server", ""))
                 common.set_phase(common.PHASE_CONNECTED)
                 ipv6guard.sync(True)
+
+        # Plus de service : les addons ne doivent plus attendre de pause.
+        common.set_prop(exceptions.PROP_IDS, "")
+        common.set_prop(exceptions.PROP_READY, "")
 
         # Kodi is shutting down: use the value cached during the loop so we don't
         # touch the add-on API while it is being torn down.

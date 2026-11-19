@@ -26,6 +26,14 @@ PROP_REV = "protonvpn.exceptions_rev"        # change à chaque modification de 
 PROP_PAUSED = "protonvpn.paused"             # id de l'addon qui a mis le tunnel en pause
 PROP_PAUSED_CFG = "protonvpn.paused_config"  # configuration à relancer après la pause
 
+# v0.6.8 : pause demandée par l'addon lui-même, AVANT sa lecture. Les adresses
+# des flux YouTube sont liées à l'IP qui les a obtenues (paramètre ip=) : la
+# pause ne venait qu'au démarrage de la lecture, le flux obtenu par le VPN
+# était lu sans lui et YouTube coupait au bout de 20 à 30 s (HTTP 403).
+PROP_IDS = "protonvpn.exception_ids"         # ids en exception, séparés par des virgules
+PROP_REQUEST = "protonvpn.pause_request"     # « <id> <échéance epoch> [numéro] », posé par l'addon
+PROP_READY = "protonvpn.pause_ready"         # id de l'addon, une fois le tunnel coupé
+
 # Ancienne option « YouTube hors du VPN » (0.5.13 à 0.5.17) : reprise une fois.
 LEGACY_SETTING = "bypass_youtube"
 LEGACY_ADDONS = ("plugin.video.wtube", "plugin.video.youtube")
@@ -106,6 +114,18 @@ def active_ids(items=None):
 
 def rev():
     return common.get_prop(PROP_REV)
+
+
+def requested(now=None):
+    """Addon qui demande la pause avant de lire ('' sans demande ou si elle a
+    expiré : un addon arrêté net ne garde pas le VPN en pause)."""
+    parts = (common.get_prop(PROP_REQUEST) or "").split()  # id, échéance, numéro de lecture
+    try:
+        if len(parts) >= 2 and float(parts[1]) >= (time.time() if now is None else now):
+            return parts[0]
+    except ValueError:
+        pass
+    return ""
 
 
 # --- addons -------------------------------------------------------------------
