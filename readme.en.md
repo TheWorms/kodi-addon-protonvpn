@@ -7,7 +7,7 @@
 # ProtonVPN
 
 <!-- version:auto -->
-**Version : 0.6.7**
+**Version : 0.6.8**
 <!-- /version:auto -->
 
 Kodi add-on to drive **ProtonVPN** with a simple interface, in **WireGuard** or
